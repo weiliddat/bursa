@@ -1,0 +1,44 @@
+>>> META
+; Commodities (currencies and assets)
+default: USD
+commodity: USD
+commodity: EUR
+commodity: MYR
+commodity: AAPL
+
+; Symbol aliases
+alias: $ = USD
+alias: € = EUR
+alias: RM = MYR
+
+; Budget tracking (investments excluded from envelope system)
+no-budget: @Brokerage
+
+>>> START
+2026-01-01
+  ; Initializing accounts with mixed symbol placement
+  +5000.00 $   < #Equity:Opening > @Checking
+  +50 AAPL     < #Equity:Opening > @Brokerage
+
+>>> BUDGET
+2026-01
+  #Groceries +$500.00
+  #Investing +1000.00 $
+
+>>> LEDGER
+@Checking
+  2026-01-15 +$3000.00 < #Job:Salary ; Payday
+  2026-01-16 -100.00 $ > #Groceries  ; Trader Joes run
+  2026-01-20 -$1000.00 > @Brokerage #Investing
+  2026-01-25 -$100.00 > @Maybank ; Driver for cross-currency transfer
+
+@Brokerage
+  ; Swapping Cash for Stock (Internal Swap)
+  2026-01-21 -1000.00 $ > 6.5 AAPL
+
+@Maybank
+  ; Cross currency transfer from Checking (USD -> MYR)
+  2026-01-25 = +RM470.00 < @Checking (-$100.00)
+
+@Checking
+  2026-01-31 == $6800.00 ; Reconciliation Check

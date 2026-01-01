@@ -1,0 +1,28 @@
+{
+  "name": "bursa",
+  "version": "0.1.0",
+  "description": "Minimalistic plain-text personal finance tool",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "check": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write ."
+  },
+  "keywords": [
+    "finance",
+    "plaintext",
+    "accounting",
+    "budgeting"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@biomejs/biome": "2.3.10"
+  }
+}
