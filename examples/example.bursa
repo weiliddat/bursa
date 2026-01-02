@@ -5,6 +5,10 @@ commodity: USD
 commodity: EUR
 commodity: MYR
 commodity: AAPL
+commodity: SPY
+commodity: VOO
+commodity: BTC
+commodity: ETH
 
 ; Symbol aliases
 alias: $ = USD
@@ -17,8 +21,10 @@ no-budget: @Brokerage
 >>> START
 2026-01-01
   @Checking 5000 $
-  @Brokerage 50 AAPL
   @Maybank 1200 RM
+  @Brokerage 1000 $ 500 €
+  @Brokerage 50 AAPL 10 SPY 5 VOO
+  @Brokerage 0.25 BTC 2.5 ETH
 
 >>> BUDGET
 2026-01
@@ -35,6 +41,8 @@ no-budget: @Brokerage
 @Brokerage
   ; Swapping cash for stock (no category needed, account is no-budget)
   2026-01-21 -1000 $ +6.5 AAPL
+  2026-01-22 -500 $ +3.2 VOO                ; buying ETF
+  2026-02-01 -2 SPY +1200 $                 ; selling ETF
 
 @Maybank
   ; Cross-currency transfer receiver (USD -> MYR)

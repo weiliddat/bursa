@@ -1,6 +1,6 @@
 # Bursa Language Specification
 
-> Version: 0.2.2 (Draft)
+> Version: 0.2.3 (Draft)
 > Last Updated: 2026-01-02
 
 ## 1. Core Philosophy
@@ -219,7 +219,7 @@ account_list    = account ("," account)*
 
 ; START section (declarative balances)
 start_block     = DATE NEWLINE start_entry*
-start_entry     = INDENT account amount
+start_entry     = INDENT account amount+    ; multiple amounts for semantic grouping
 
 ; BUDGET section
 budget_block    = YEAR_MONTH NEWLINE budget_entry*
@@ -227,7 +227,8 @@ budget_entry    = INDENT category amount
 
 ; LEDGER section
 ledger_block    = account NEWLINE ledger_entry*
-ledger_entry    = INDENT "?"? DATE (transaction | assertion) comment?
+ledger_entry    = INDENT unverified? DATE (transaction | assertion) comment?
+unverified      = "?"                        ; unverified marker
 
 ; Transaction: canonical order enforced
 transaction     = amount (target | amount) category? tag*
@@ -323,3 +324,4 @@ comment         = ";" TEXT
 | 0.2.0   | 2026-01-02 | Simplified syntax: +/- signs only, canonical order, & for categories, # for tags, declarative START |
 | 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                            |
 | 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount  |
+| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line               |

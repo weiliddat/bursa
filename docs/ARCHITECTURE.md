@@ -1,6 +1,6 @@
 # Bursa Architecture
 
-> Version: 0.2.2 (Draft)
+> Version: 0.2.3 (Draft)
 > Last Updated: 2026-01-02
 
 ## Overview
@@ -128,7 +128,7 @@ interface StartBlock extends BaseNode {
 interface StartEntry extends BaseNode {
   type: 'StartEntry';
   account: AccountRef;
-  amount: Amount;
+  amounts: Amount[];  // multiple amounts per line for semantic grouping
 }
 
 // BUDGET entries
@@ -437,3 +437,4 @@ src/__tests__/
 | 0.2.0   | 2026-01-02 | Simplified: +/- signs, canonical order, & categories, # tags   |
 | 0.2.1   | 2026-01-02 | Added `?` token and `unverified` marker support                |
 | 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via amount targets  |
+| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line (Amount[])     |
