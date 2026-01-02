@@ -1,6 +1,6 @@
 # Bursa Language Specification
 
-> Version: 0.2.3 (Draft)
+> Version: 0.2.5 (Draft)
 > Last Updated: 2026-01-02
 
 ## 1. Core Philosophy
@@ -35,13 +35,12 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 
 ### 3.2 META Directives
 
-| Directive   | Syntax                        | Description                                |
-| ----------- | ----------------------------- | ------------------------------------------ |
-| `default`   | `default: USD`                | Default commodity when none specified      |
-| `commodity` | `commodity: AAPL`             | Declare a valid commodity (for validation) |
-| `alias`     | `alias: $ = USD`              | Map symbol to commodity                    |
-| `budget`    | `budget: @Checking, @Savings` | Accounts tracked in budget categories      |
-| `no-budget` | `no-budget: @Brokerage`       | Accounts excluded from budget tracking     |
+| Directive   | Syntax                  | Description                                |
+| ----------- | ----------------------- | ------------------------------------------ |
+| `default`   | `default: USD`          | Default commodity when none specified      |
+| `commodity` | `commodity: AAPL`       | Declare a valid commodity (for validation) |
+| `alias`     | `alias: $ = USD`        | Map symbol to commodity                    |
+| `untracked` | `untracked: @Brokerage` | Accounts excluded from budget tracking     |
 
 **Commodity Declaration:**
 - All commodities used in the file should be declared in META
@@ -49,20 +48,20 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 - Unknown commodities in transactions will produce warnings
 
 **Budget Tracking:**
-- By default, all accounts are budget-tracked
-- Use `no-budget:` to exclude investment/asset accounts from category tracking
-- OR use `budget:` to explicitly list only budget-tracked accounts (opt-in mode)
-- Transfers FROM budget accounts TO no-budget accounts drain categories (money left the budget system)
-- Transfers FROM no-budget accounts don't affect categories
+- By default, all accounts are tracked (included in the budgeting system)
+- Use `untracked:` to exclude accounts from budget tracking
+- Supports wildcards: `@*` (all accounts) or `@Investments:*` (hierarchy)
+- Transfers FROM tracked accounts TO untracked accounts require a category (money leaving the budget)
+- Transfers FROM untracked accounts don't affect categories
 
 ### 3.3 Entities
 
-| Prefix | Entity Type | Mnemonic  | Description                              | Examples                    |
-| ------ | ----------- | --------- | ---------------------------------------- | --------------------------- |
-| `@`    | Account     | "at"      | Places where assets sit                  | `@Checking`, `@Visa`        |
-| `&`    | Category    | "&"       | Budget categories (income/expense flows) | `&Groceries`, `&Job:Salary` |
-| `#`    | Tag         | "hashtag" | Metadata for search/grouping             | `#amazon`, `#project:q1`    |
-| (none) | Commodity   |           | Standard currencies or assets            | `USD`, `EUR`, `AAPL`        |
+| Prefix | Entity Type | Description                              | Examples                    |
+| ------ | ----------- | ---------------------------------------- | --------------------------- |
+| `@`    | Account     | Places where assets sit                  | `@Checking`, `@Visa`        |
+| `&`    | Category    | Budget categories (income/expense flows) | `&Groceries`, `&Job:Salary` |
+| `#`    | Tag         | Metadata for search/grouping             | `#amazon`, `#project:q1`    |
+| (none) | Commodity   | Standard currencies or assets            | `USD`, `EUR`, `AAPL`        |
 
 **Hierarchical Names:**
 Accounts, categories, and tags support hierarchical naming using `:` as separator:
@@ -90,9 +89,9 @@ Transactions use **sign-based semantics** within an account block: the sign indi
 - If `TARGET` is an `@Account`, the entry represents an internal transfer between accounts and does **not** change net worth (it redistributes value across accounts).
 - If `TARGET` is a `&Category`, the entry represents an external flow classified to an envelope/category and **does** change net worth.
 
-**Budget tracking depends on whether the transfer stays “in budget”:**
-- Transfers between two budget-tracked accounts can omit `CATEGORY` (it’s just moving money within your budget system).
-- If a transfer involves a no-budget account, it is treated as money leaving/entering the budget system, so you must provide a `&Category` to record which envelope/category it affects.
+**Budget tracking depends on whether money stays in the tracked system:**
+- Transfers between two tracked accounts need no category (money stays in budget).
+- Transfers FROM a tracked account TO an untracked account require a `&Category` (money leaving the budget).
 
 **Signed balances (no fixed account types):**
 Accounts are not declared as “asset” or “liability”. A single account can cross zero over time:
@@ -104,21 +103,29 @@ Example: on `@CreditCard`, a `-$50` entry makes the balance more negative (you o
 **Ledger Entry Format:**
 
 ```
-[?] DATE AMOUNT TARGET [CATEGORY] [TAG...] [; comment]
+[?] DATE AMOUNT TARGET [TAG...] [; comment]
 ```
 
 Ledger entries are either:
-- a **transaction** (`AMOUNT ...`), or
+- a **transaction** (`AMOUNT TARGET ...`), or
 - an **assertion** (`== AMOUNT`)
 
-| Component | Required | Description                                  |
-| --------- | -------- | -------------------------------------------- |
-| DATE      | Yes      | YYYY-MM-DD format                            |
-| AMOUNT    | Yes      | Signed amount with optional commodity        |
-| TARGET    | Yes      | `@Account`, `&Category`, or amount (swap)    |
-| CATEGORY  | No       | `&Category` for budget tracking on transfers |
-| TAG       | No       | One or more `#tag` for metadata              |
-| comment   | No       | Text after `;`                               |
+| Component | Required | Description                           |
+| --------- | -------- | ------------------------------------- |
+| DATE      | Yes      | YYYY-MM-DD format                     |
+| AMOUNT    | Yes      | Signed amount with optional commodity |
+| TARGET    | Yes      | Where the flow goes (see below)       |
+| TAG       | No       | One or more `#tag` for metadata       |
+| comment   | No       | Text after `;`                        |
+
+**Target Types:**
+
+| Target Form          | Description                                     |
+| -------------------- | ----------------------------------------------- |
+| `&Category`          | Expense/income flow (affects net worth)         |
+| `@Account`           | Transfer between accounts (no net worth change) |
+| `@Account &Category` | Transfer to untracked account (drains category) |
+| `+AMOUNT`            | Swap commodities within the account             |
 
 **Transaction Types:**
 
@@ -214,9 +221,9 @@ section         = ">>>" SECTION_NAME NEWLINE block*
 meta_line       = "default:" COMMODITY
                 | "commodity:" COMMODITY
                 | "alias:" SYMBOL "=" COMMODITY
-                | "budget:" account_list
-                | "no-budget:" account_list
-account_list    = account ("," account)*
+                | "untracked:" account_pattern_list
+account_pattern_list = account_pattern ("," account_pattern)*
+account_pattern = "@" IDENTIFIER (":" IDENTIFIER)* (":" "*")?   ; supports @foo:* wildcards
 
 ; START section (declarative balances)
 start_block     = DATE NEWLINE start_entry*
@@ -231,15 +238,17 @@ ledger_block    = account NEWLINE ledger_entry*
 ledger_entry    = INDENT unverified? DATE (transaction | assertion) comment?
 unverified      = "?"                        ; unverified marker
 
-; Transaction: canonical order enforced
-transaction     = amount (target | amount) category? tag*
+; Transaction: amount flows to target
+transaction     = amount target tag*
 
 ; Assertion: balance check
 assertion       = "==" amount
 
 ; Shared primitives
 amount          = SIGN? SYMBOL? NUMBER SYMBOL? COMMODITY?
-target          = account | category
+target          = amount                     ; swap (second amount)
+                | category                   ; expense/income flow
+                | account category?          ; transfer (category for tracked→untracked)
 account         = "@" IDENTIFIER (":" IDENTIFIER)*
 category        = "&" IDENTIFIER (":" IDENTIFIER)*
 tag             = "#" IDENTIFIER (":" IDENTIFIER)*
@@ -250,15 +259,14 @@ comment         = ";" TEXT
 
 ### 5.1 Transaction Requirements
 
-| Rule     | Description                                                                                         |
-| -------- | --------------------------------------------------------------------------------------------------- |
-| **V001** | Every transaction requires: amount, then a target (`@Account`, `&Category`, or an amount for swaps) |
-| **V002** | Commodity must be declared in META (via `commodity:` or `alias:`)                                   |
-| **V003** | Amount must be a valid number                                                                       |
-| **V004** | Date must be valid (YYYY-MM-DD format)                                                              |
-| **V005** | Components must follow canonical order: amount, target, category, tags                              |
-| **V006** | Optional category is only valid when target is an account (no double categorization)                |
-| **V007** | Swap transactions use a second amount as the “target”; category is not allowed (warning)            |
+| Rule     | Description                                                                    |
+| -------- | ------------------------------------------------------------------------------ |
+| **V001** | Every transaction requires: amount, then a target                              |
+| **V002** | Commodity must be declared in META (via `commodity:` or `alias:`)              |
+| **V003** | Amount must be a valid number                                                  |
+| **V004** | Date must be valid (YYYY-MM-DD format)                                         |
+| **V005** | Components must follow canonical order: amount, target, tags                   |
+| **V006** | Category suffix on target is only valid when target is an untracked `@Account` |
 
 ### 5.2 Reference Validation
 
@@ -273,7 +281,7 @@ comment         = ";" TEXT
 | Rule     | Description                                                                                     |
 | -------- | ----------------------------------------------------------------------------------------------- |
 | **V020** | Category names form a single namespace across BUDGET and LEDGER                                 |
-| **V021** | Transfers FROM budget accounts TO no-budget accounts require a category                         |
+| **V021** | Transfers FROM tracked accounts TO untracked accounts require a category                        |
 | **V022** | Unallocated budget (income minus total allocations) should not be negative per period (warning) |
 
 ### 5.4 Assertion Validation
@@ -310,7 +318,7 @@ comment         = ";" TEXT
 | E007 | Reference  | Unknown commodity                              |
 | E008 | Validation | Assertion failed (balance mismatch)            |
 | E009 | Syntax     | Invalid component order in transaction         |
-| E010 | Validation | Transfer to no-budget account missing category |
+| E010 | Validation | Transfer to untracked account missing category |
 | W003 | Warning    | Unverified entry (`?`) needs user confirmation |
 | W001 | Warning    | Non-chronological dates in account block       |
 | W002 | Warning    | Expense category not in budget                 |
@@ -326,3 +334,5 @@ comment         = ";" TEXT
 | 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                                                                   |
 | 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount                                        |
 | 0.2.3   | 2026-01-02 | START entries support multiple amounts per line                                                     |
+| 0.2.4   | 2026-01-02 | Unified `target` primitive: encompasses amount, category, and account (with optional category)      |
+| 0.2.5   | 2026-01-02 | Renamed to tracked/untracked; removed budget: directive; added wildcard support for untracked:      |
