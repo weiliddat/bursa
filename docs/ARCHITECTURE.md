@@ -1,7 +1,7 @@
 # Bursa Architecture
 
-> Version: 0.1.0 (Draft)
-> Last Updated: 2026-01-01
+> Version: 0.2.1 (Draft)
+> Last Updated: 2026-01-02
 
 ## Overview
 
@@ -58,21 +58,20 @@ enum TokenType {
   IDENTIFIER,       // Checking, Groceries, USD
   STRING,           // Quoted strings if needed
   
-  // Symbols
-  ACCOUNT,          // @Checking
-  CATEGORY,         // #Groceries
+  // Entity prefixes (lexer emits these as compound tokens)
+  ACCOUNT,          // @Checking, @Assets:Bank:Checking
+  CATEGORY,         // &Groceries, &Expenses:Food
+  TAG,              // #traderjoes, #q1
   CURRENCY_SYMBOL,  // $, €, RM
   
   // Operators
   PLUS,             // +
   MINUS,            // -
-  ARROW_RIGHT,      // >
-  ARROW_LEFT,       // <
-  EQUALS,           // =
   DOUBLE_EQUALS,    // ==
+  QUESTION,         // ?
   COLON,            // :
-  LPAREN,           // (
-  RPAREN,           // )
+  EQUALS,           // =
+  COMMA,            // ,
   
   // Special
   COMMENT,          // ; ...
@@ -119,34 +118,76 @@ type MetaDirective =
   | { type: 'Budget'; accounts: AccountRef[] }
   | { type: 'NoBudget'; accounts: AccountRef[] };
 
-// Ledger entries (three types)
-type LedgerEntry = Transaction | Assertion | Verification;
+// START entries (declarative balances)
+interface StartBlock extends BaseNode {
+  type: 'StartBlock';
+  date: string;  // YYYY-MM-DD
+  entries: StartEntry[];
+}
+
+interface StartEntry extends BaseNode {
+  type: 'StartEntry';
+  account: AccountRef;
+  amount: Amount;
+}
+
+// BUDGET entries
+interface BudgetPeriod extends BaseNode {
+  type: 'BudgetPeriod';
+  period: string;  // YYYY-MM
+  entries: BudgetEntry[];
+}
+
+interface BudgetEntry extends BaseNode {
+  type: 'BudgetEntry';
+  category: CategoryRef;
+  amount: Amount;
+}
+
+// LEDGER entries
+interface AccountBlock extends BaseNode {
+  type: 'AccountBlock';
+  account: AccountRef;
+  entries: LedgerEntry[];
+}
+
+type LedgerEntry = Transaction | Assertion;
 
 interface Transaction extends BaseNode {
   type: 'Transaction';
-  date: Date;
+  date: string;
+  unverified: boolean;     // true if marked with `?`
   amount: Amount;
-  direction: '>' | '<';
-  target: AccountRef | CategoryRef | SwapTarget;
-  category?: CategoryRef;  // optional, for budget tracking
+  target: AccountRef | CategoryRef;
+  category?: CategoryRef;  // optional, for budget tracking on transfers
+  tags: TagRef[];
   comment?: string;
 }
 
 interface Assertion extends BaseNode {
   type: 'Assertion';
-  date: Date;
+  date: string;
   amount: Amount;
   comment?: string;
 }
 
-interface Verification extends BaseNode {
-  type: 'Verification';
-  date: Date;
-  amount: Amount;
-  direction: '>' | '<';
-  account: AccountRef;
-  conversion?: Amount;
-  comment?: string;
+// References (hierarchical names supported)
+interface AccountRef extends BaseNode {
+  type: 'AccountRef';
+  path: string[];  // ['Assets', 'Bank', 'Checking']
+  raw: string;     // '@Assets:Bank:Checking'
+}
+
+interface CategoryRef extends BaseNode {
+  type: 'CategoryRef';
+  path: string[];  // ['Expenses', 'Food', 'Groceries']
+  raw: string;     // '&Expenses:Food:Groceries'
+}
+
+interface TagRef extends BaseNode {
+  type: 'TagRef';
+  name: string;    // 'traderjoes' (without #)
+  raw: string;     // '#traderjoes'
 }
 
 interface Amount extends BaseNode {
@@ -161,12 +202,10 @@ interface Amount extends BaseNode {
 
 1. **Lexer Phase:** Single-pass tokenization with lookahead
 2. **Parser Phase:** Recursive descent, section-aware
-3. **Normalization Phase:** Flexible transaction syntax → canonical AST
-4. **Validation Phase:** Semantic checks on AST
+3. **Validation Phase:** Semantic checks on AST
 
-**Flexible Transaction Parsing:**
-Transaction components (amount, direction, target, category) can appear in any order.
-The parser collects all components, then validates required fields are present.
+**Canonical Transaction Parsing:**
+Transaction components must follow strict order: amount, target, category (optional), tags (optional).
 
 ```typescript
 // Public API
@@ -195,7 +234,7 @@ interface BursaDocument {
   
   // Computed state
   balances: Map<string, Map<string, Decimal>>; // account -> commodity -> balance
-  budgetEnvelopes: Map<string, EnvelopeState>;
+  categoryStates: Map<string, CategoryState>;
   
   // Diagnostics
   errors: Diagnostic[];
@@ -204,13 +243,18 @@ interface BursaDocument {
 
 interface Account {
   name: string;
-  path: string[];           // ['Assets', 'Checking']
+  path: string[];           // ['Assets', 'Bank', 'Checking']
   balances: Map<string, Decimal>;
   transactions: Transaction[];
   isBudgetTracked: boolean; // from META budget:/no-budget: directives
 }
 
-interface EnvelopeState {
+interface Category {
+  name: string;
+  path: string[];           // ['Expenses', 'Food', 'Groceries']
+}
+
+interface CategoryState {
   category: string;
   period: string;           // '2026-01'
   allocated: Decimal;
@@ -232,7 +276,7 @@ const [source, setSource] = createSignal<string>('');
 const parsed = createMemo(() => parse(source()));
 const accounts = createMemo(() => extractAccounts(parsed().ast));
 const balances = createMemo(() => computeBalances(parsed().ast, accounts()));
-const budgetStatus = createMemo(() => computeBudget(parsed().ast, accounts()));
+const categoryStatus = createMemo(() => computeCategories(parsed().ast, accounts()));
 const diagnostics = createMemo(() => [...parsed().errors, ...validate(parsed().ast)]);
 ```
 
@@ -243,13 +287,13 @@ The parser exposes hooks for editor integration:
 ```typescript
 interface CompletionContext {
   position: number;
-  triggerCharacter: '@' | '#' | null;
+  triggerCharacter: '@' | '&' | '#' | null;
   prefix: string;
 }
 
 interface CompletionItem {
   label: string;
-  kind: 'account' | 'category' | 'commodity';
+  kind: 'account' | 'category' | 'tag' | 'commodity';
   insertText: string;
 }
 
@@ -272,7 +316,7 @@ src/ui/
 ├── Views/
 │   ├── Accounts.tsx      # Account list & balances
 │   ├── Transactions.tsx  # Transaction feed
-│   ├── Budget.tsx        # Envelope dashboard
+│   ├── Budget.tsx        # Budget dashboard
 │   └── Reports.tsx       # Charts & summaries
 ├── Layout/
 │   └── Shell.tsx         # App shell, navigation
@@ -299,7 +343,7 @@ User edits text
        │
        ├──► accounts ──► <AccountList />
        ├──► balances ──► <BalanceSheet />
-       ├──► budgetStatus ──► <BudgetView />
+       ├──► categoryStatus ──► <BudgetView />
        └──► diagnostics ──► <Editor /> (underlines)
 ```
 
@@ -346,7 +390,7 @@ Test categories:
 ```
 src/domain/__tests__/
 ├── balances.test.ts      # Balance computation
-├── budget.test.ts        # Envelope logic
+├── budget.test.ts        # Budget logic
 └── validation.test.ts    # Semantic rules
 ```
 
@@ -362,7 +406,9 @@ src/__tests__/
 
 ## Changelog
 
-| Version | Date       | Changes                                         |
-|---------|------------|-------------------------------------------------|
-| 0.1.0   | 2026-01-01 | Initial architecture                            |
-| 0.1.1   | 2026-01-01 | Add META directives, flexible tx, assertions    |
+| Version | Date       | Changes                                                        |
+|---------|------------|----------------------------------------------------------------|
+| 0.1.0   | 2026-01-01 | Initial architecture                                           |
+| 0.1.1   | 2026-01-01 | Add META directives, flexible tx, assertions                   |
+| 0.2.0   | 2026-01-02 | Simplified: +/- signs, canonical order, & categories, # tags   |
+| 0.2.1   | 2026-01-02 | Added `?` token and `unverified` field for transactions        |

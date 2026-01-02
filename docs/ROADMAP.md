@@ -54,7 +54,7 @@
 - [ ] **1B.6** Implement LEDGER block parsing
 - [ ] **1B.7** Implement amount parsing (all formats: `$50`, `50$`, `-$50`, etc.)
 - [ ] **1B.8** Implement transaction parsing (expense, income, transfer)
-- [ ] **1B.9** Implement advanced: swaps, verification, assertions
+- [ ] **1B.9** Implement advanced: swaps, unverified (`?`), assertions (`==`)
 - [ ] **1B.10** Error recovery: continue parsing after errors
 
 ### 1C: Error Handling (Week 3)
@@ -89,7 +89,6 @@
 - [ ] **2B.3** Apply LEDGER transactions in date order
 - [ ] **2B.4** Multi-commodity balance tracking
 - [ ] **2B.5** Validate assertions (`==`)
-- [ ] **2B.6** Validate verifications (`=`)
 
 ### 2C: Budget Logic (Week 4)
 
@@ -148,7 +147,7 @@
 ### 4B: Intellisense (Week 7)
 
 - [ ] **4B.1** `@` triggers account completion
-- [ ] **4B.2** `#` triggers category completion
+- [ ] **4B.2** `&` triggers category completion
 - [ ] **4B.3** Hover information for entities
 - [ ] **4B.4** Go-to-definition for references
 

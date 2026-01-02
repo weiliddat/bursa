@@ -11,34 +11,34 @@ alias: $ = USD
 alias: € = EUR
 alias: RM = MYR
 
-; Budget tracking (investments excluded from envelope system)
+; Budget tracking (investments excluded from budget categories)
 no-budget: @Brokerage
 
 >>> START
 2026-01-01
-  ; Initializing accounts with mixed symbol placement
-  +5000.00 $   < #Equity:Opening > @Checking
-  +50 AAPL     < #Equity:Opening > @Brokerage
+  @Checking 5000 $
+  @Brokerage 50 AAPL
 
 >>> BUDGET
 2026-01
-  #Groceries +$500.00
-  #Investing +1000.00 $
+  &Groceries 500 $
+  &Investing 1000 $
 
 >>> LEDGER
 @Checking
-  2026-01-15 +$3000.00 < #Job:Salary ; Payday
-  2026-01-16 -100.00 $ > #Groceries  ; Trader Joes run
-  2026-01-20 -$1000.00 > @Brokerage #Investing
-  2026-01-25 -$100.00 > @Maybank ; Driver for cross-currency transfer
+  2026-01-15 +$3000 &Job:Salary              ; payday
+  2026-01-16 -$100 &Groceries #traderjoes    ; weekly groceries
+  2026-01-20 -$1000 @Brokerage &Investing    ; transfer to investment account
+  2026-01-25 -$100 @Maybank                  ; cross-currency transfer
 
 @Brokerage
-  ; Swapping Cash for Stock (Internal Swap)
-  2026-01-21 -1000.00 $ > 6.5 AAPL
+  ; Swapping cash for stock (no category needed, account is no-budget)
+  2026-01-21 -1000 $
+  2026-01-21 +6.5 AAPL
 
 @Maybank
-  ; Cross currency transfer from Checking (USD -> MYR)
-  2026-01-25 = +RM470.00 < @Checking (-$100.00)
+  ; Cross-currency transfer receiver (USD -> MYR)
+  2026-01-25 ? +RM470 @Checking              ; auto-linked, verify and remove ?
 
 @Checking
-  2026-01-31 == $6800.00 ; Reconciliation Check
+  2026-01-31 == $6800                        ; reconciliation check
