@@ -1,6 +1,6 @@
 # Bursa Architecture
 
-> Version: 0.2.1 (Draft)
+> Version: 0.2.2 (Draft)
 > Last Updated: 2026-01-02
 
 ## Overview
@@ -156,9 +156,9 @@ type LedgerEntry = Transaction | Assertion;
 interface Transaction extends BaseNode {
   type: 'Transaction';
   date: string;
-  unverified: boolean;     // true if marked with `?`
+  unverified: boolean;     // true if the ledger entry is prefixed with `?`
   amount: Amount;
-  target: AccountRef | CategoryRef;
+  target: AccountRef | CategoryRef | Amount; // Amount target means an inline swap
   category?: CategoryRef;  // optional, for budget tracking on transfers
   tags: TagRef[];
   comment?: string;
@@ -167,6 +167,7 @@ interface Transaction extends BaseNode {
 interface Assertion extends BaseNode {
   type: 'Assertion';
   date: string;
+  unverified: boolean;     // true if the ledger entry is prefixed with `?`
   amount: Amount;
   comment?: string;
 }
@@ -205,7 +206,7 @@ interface Amount extends BaseNode {
 3. **Validation Phase:** Semantic checks on AST
 
 **Canonical Transaction Parsing:**
-Transaction components must follow strict order: amount, target, category (optional), tags (optional).
+Transaction components must follow strict order: amount, target (account/category/amount), category (optional), tags (optional).
 
 ```typescript
 // Public API
@@ -301,6 +302,29 @@ function getCompletions(doc: BursaDocument, ctx: CompletionContext): CompletionI
 function getHoverInfo(doc: BursaDocument, position: number): HoverInfo | null;
 function getDiagnosticsAtPosition(doc: BursaDocument, position: number): Diagnostic[];
 ```
+
+### 2.4 Derived Computations (UI)
+
+The UI surfaces derived numbers (budget status, unallocated money, warnings) computed from the parsed AST. Comments remain free-form and are not required for correctness.
+
+**Budget-derived numbers:**
+- Remaining envelope/category money (per period) from `allocated - spent + rollover`
+- Unallocated / to-be-budgeted money (per period) from budget-tracked account balances minus total category availability
+
+```typescript
+interface BudgetSummary {
+  period: string; // YYYY-MM
+  commodity: string;
+  toBeBudgeted: Decimal;
+}
+
+function computeBudgetSummary(doc: BursaDocument): BudgetSummary[];
+```
+
+**Diagnostics beyond syntax:**
+In addition to parser errors, the domain layer can emit warnings/errors for potentially problematic entries, including:
+- Transfers involving `no-budget` accounts missing a `&Category`
+- Unverified entries (`?`) that need user confirmation
 
 ## 3. UI Layer
 
@@ -411,4 +435,5 @@ src/__tests__/
 | 0.1.0   | 2026-01-01 | Initial architecture                                           |
 | 0.1.1   | 2026-01-01 | Add META directives, flexible tx, assertions                   |
 | 0.2.0   | 2026-01-02 | Simplified: +/- signs, canonical order, & categories, # tags   |
-| 0.2.1   | 2026-01-02 | Added `?` token and `unverified` field for transactions        |
+| 0.2.1   | 2026-01-02 | Added `?` token and `unverified` marker support                |
+| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via amount targets  |

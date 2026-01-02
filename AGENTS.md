@@ -66,5 +66,12 @@ bursa/
 ## Documentation
 
 - `docs/SPEC.md` is the source of truth for syntax
+- `docs/ARCHITECTURE.md` defines system design and AST structures
+- `examples/example.bursa` is the canonical test fixture
 - Update `docs/ROADMAP.md` when completing tasks
 - Update this file when adding new commands or conventions
+
+**When making changes that affect the language or system design:**
+1. Read `docs/SPEC.md`, `docs/ARCHITECTURE.md`, and `examples/example.bursa` first
+2. Update all three files to maintain consistency
+3. Bump version numbers in changelogs when making substantive changes

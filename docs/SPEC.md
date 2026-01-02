@@ -1,6 +1,6 @@
 # Bursa Language Specification
 
-> Version: 0.2.1 (Draft)
+> Version: 0.2.2 (Draft)
 > Last Updated: 2026-01-02
 
 ## 1. Core Philosophy
@@ -100,11 +100,15 @@ Accounts are not declared as “asset” or “liability”. A single account ca
 
 Example: on `@CreditCard`, a `-$50` entry makes the balance more negative (you owe more); a `+$500` entry moves it toward (or past) zero (you owe less / may have a credit).
 
-**Canonical Line Format:**
+**Ledger Entry Format:**
 
 ```
-DATE AMOUNT TARGET [CATEGORY] [TAG...] [; comment]
+[?] DATE AMOUNT TARGET [CATEGORY] [TAG...] [; comment]
 ```
+
+Ledger entries are either:
+- a **transaction** (`AMOUNT ...`), or
+- an **assertion** (`== AMOUNT`)
 
 | Component | Required | Description                                      |
 |-----------|----------|--------------------------------------------------|
@@ -124,6 +128,7 @@ DATE AMOUNT TARGET [CATEGORY] [TAG...] [; comment]
 | **Transfer Out**      | `-1000 $ @Savings`              | Move to another account              |
 | **Transfer In**       | `+1000 $ @Checking`             | Receive from another account         |
 | **Budgeted Transfer** | `-1000 $ @Brokerage &Investing` | Transfer to untracked with category  |
+| **Swap**              | `-1000 $ +6.5 AAPL`              | Swap commodities within an account   |
 
 **Examples:**
 
@@ -139,31 +144,27 @@ DATE AMOUNT TARGET [CATEGORY] [TAG...] [; comment]
 
 #### Multi-Currency/Asset Swaps
 
-Within an account, swap one commodity for another:
+Within an account, swap one commodity for another using a single line with two amounts:
 
 ```text
 @Brokerage
-  ; Buying stock: cash out, shares in (no category needed, account is no-budget)
-  2026-01-21 -1000$
-  2026-01-21 +6.5 AAPL
+  ; Buying stock: cash out, shares in (swap)
+  2026-01-21 -1000 $ +6.5 AAPL
 
-  ; Selling stock: shares out, cash in
-  2026-02-15 -5 AAPL
-  2026-02-15 +800$
+  ; Selling stock: shares out, cash in (swap)
+  2026-02-15 -5 AAPL +800 $
 ```
 
 #### Cross-Currency Transfers
 
-For transfers between accounts with different currencies, record both sides:
+For transfers between accounts with different currencies, record the initiating side as a normal transfer. On the receiving side, prefer an (optionally unverified) balance assertion for reconciliation.
 
 ```text
 @Checking
   2026-01-25 -100 $ @Maybank                  ; driver: USD out
 
 @Maybank
-  2026-01-26 +470 RM @Checking                ; receiver: MYR in
-  ; System can auto-link by date + counterparty, or add comment:
-  ; from @Checking 2026-01-25 -100 $
+  ? 2026-01-26 == 1670 RM                     ; 1200 + 470 from @Checking 2026-01-25 -100 $
 ```
 
 #### Assertions
@@ -177,12 +178,12 @@ Check balance at a specific point in time:
 
 #### Unverified Entries
 
-Use `?` to mark auto-generated or unverified entries (e.g., the receiver side of cross-currency transfers). Users should verify and remove the `?` once confirmed:
+Use `?` to mark unverified ledger entries. Put it at the very start of the line so it’s visually obvious. Users should verify and remove the `?` once confirmed:
 
 ```text
 @Maybank
-  2026-01-25 ? +RM470 @Checking               ; auto-linked, needs verification
-  2026-01-25 +RM470 @Checking                 ; verified (? removed)
+  ? 2026-01-25 == 1670 RM                     ; needs verification
+  2026-01-25 == 1670 RM                       ; verified (? removed)
 ```
 
 ### 3.6 Budgeting
@@ -226,10 +227,10 @@ budget_entry    = INDENT category amount
 
 ; LEDGER section
 ledger_block    = account NEWLINE ledger_entry*
-ledger_entry    = INDENT DATE (transaction | assertion) comment?
+ledger_entry    = INDENT "?"? DATE (transaction | assertion) comment?
 
 ; Transaction: canonical order enforced
-transaction     = "?"? amount target category? tag*
+transaction     = amount (target | amount) category? tag*
 
 ; Assertion: balance check
 assertion       = "==" amount
@@ -249,11 +250,13 @@ comment         = ";" TEXT
 
 | Rule | Description |
 |------|-------------|
-| **V001** | Every transaction requires: amount, target |
+| **V001** | Every transaction requires: amount, then a target (`@Account`, `&Category`, or an amount for swaps) |
 | **V002** | Commodity must be declared in META (via `commodity:` or `alias:`) |
-| **V003** | Amount must be a valid number with sign (+/-) |
+| **V003** | Amount must be a valid number |
 | **V004** | Date must be valid (YYYY-MM-DD format) |
 | **V005** | Components must follow canonical order: amount, target, category, tags |
+| **V006** | Optional category is only valid when target is an account (no double categorization) |
+| **V007** | Swap transactions use a second amount as the “target”; category is not allowed (warning) |
 
 ### 5.2 Reference Validation
 
@@ -269,6 +272,7 @@ comment         = ";" TEXT
 |------|-------------|
 | **V020** | Category names form a single namespace across BUDGET and LEDGER |
 | **V021** | Transfers FROM budget accounts TO no-budget accounts require a category |
+| **V022** | Unallocated budget (income minus total allocations) should not be negative per period (warning) |
 
 ### 5.4 Assertion Validation
 
@@ -317,4 +321,5 @@ comment         = ";" TEXT
 |---------|------------|--------------------------------------------------------------|
 | 0.1.0   | 2026-01-01 | Initial specification                                        |
 | 0.2.0   | 2026-01-02 | Simplified syntax: +/- signs only, canonical order, & for categories, # for tags, declarative START |
-| 0.2.1   | 2026-01-02 | Added `?` unverified entry marker for cross-currency auto-linking |
+| 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                            |
+| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount  |
