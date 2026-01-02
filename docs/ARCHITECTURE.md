@@ -187,8 +187,8 @@ interface CategoryRef extends BaseNode {
 
 interface TagRef extends BaseNode {
   type: 'TagRef';
-  name: string;    // 'traderjoes' (without #)
-  raw: string;     // '#traderjoes'
+  path: string[];  // ['vendor', 'traderjoes']
+  raw: string;     // '#vendor:traderjoes'
 }
 
 interface Amount extends BaseNode {
@@ -430,11 +430,11 @@ src/__tests__/
 
 ## Changelog
 
-| Version | Date       | Changes                                                        |
-|---------|------------|----------------------------------------------------------------|
-| 0.1.0   | 2026-01-01 | Initial architecture                                           |
-| 0.1.1   | 2026-01-01 | Add META directives, flexible tx, assertions                   |
-| 0.2.0   | 2026-01-02 | Simplified: +/- signs, canonical order, & categories, # tags   |
-| 0.2.1   | 2026-01-02 | Added `?` token and `unverified` marker support                |
-| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via amount targets  |
-| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line (Amount[])     |
+| Version | Date       | Changes                                                       |
+| ------- | ---------- | ------------------------------------------------------------- |
+| 0.1.0   | 2026-01-01 | Initial architecture                                          |
+| 0.1.1   | 2026-01-01 | Add META directives, flexible tx, assertions                  |
+| 0.2.0   | 2026-01-02 | Simplified: +/- signs, canonical order, & categories, # tags  |
+| 0.2.1   | 2026-01-02 | Added `?` token and `unverified` marker support               |
+| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via amount targets |
+| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line (Amount[])    |

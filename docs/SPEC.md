@@ -15,33 +15,33 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 
 ### Sections
 
-| Section     | Purpose                                           |
-|-------------|---------------------------------------------------|
-| `>>> META`  | Config (commodities, aliases, account properties) |
-| `>>> START` | Opening balances (declarative)                    |
-| `>>> BUDGET`| Category allocations                              |
-| `>>> LEDGER`| The transaction log                               |
+| Section      | Purpose                                           |
+| ------------ | ------------------------------------------------- |
+| `>>> META`   | Config (commodities, aliases, account properties) |
+| `>>> START`  | Opening balances (declarative)                    |
+| `>>> BUDGET` | Category allocations                              |
+| `>>> LEDGER` | The transaction log                               |
 
 ## 3. Syntax Specification
 
 ### 3.1 General Syntax
 
-| Feature           | Rule                                                                 |
-|-------------------|----------------------------------------------------------------------|
-| **Comments**      | Any text following `;` is ignored                                    |
-| **Aliases**       | Symbols mapped to ISO codes in META (e.g., `$` → `USD`)              |
-| **Number Format** | Currency symbols before OR after number (e.g., `$500` or `500 $`)    |
-| **Sign Placement**| Sign must be at very start (e.g., `-$500`, `-500 $`, `+RM50`)        |
+| Feature            | Rule                                                              |
+| ------------------ | ----------------------------------------------------------------- |
+| **Comments**       | Any text following `;` is ignored                                 |
+| **Aliases**        | Symbols mapped to ISO codes in META (e.g., `$` → `USD`)           |
+| **Number Format**  | Currency symbols before OR after number (e.g., `$500` or `500 $`) |
+| **Sign Placement** | Sign must be at very start (e.g., `-$500`, `-500 $`, `+RM50`)     |
 
 ### 3.2 META Directives
 
-| Directive      | Syntax                          | Description                                      |
-|----------------|---------------------------------|--------------------------------------------------|
-| `default`      | `default: USD`                  | Default commodity when none specified            |
-| `commodity`    | `commodity: AAPL`               | Declare a valid commodity (for validation)       |
-| `alias`        | `alias: $ = USD`                | Map symbol to commodity                          |
-| `budget`       | `budget: @Checking, @Savings`   | Accounts tracked in budget categories            |
-| `no-budget`    | `no-budget: @Brokerage`         | Accounts excluded from budget tracking           |
+| Directive   | Syntax                        | Description                                |
+| ----------- | ----------------------------- | ------------------------------------------ |
+| `default`   | `default: USD`                | Default commodity when none specified      |
+| `commodity` | `commodity: AAPL`             | Declare a valid commodity (for validation) |
+| `alias`     | `alias: $ = USD`              | Map symbol to commodity                    |
+| `budget`    | `budget: @Checking, @Savings` | Accounts tracked in budget categories      |
+| `no-budget` | `no-budget: @Brokerage`       | Accounts excluded from budget tracking     |
 
 **Commodity Declaration:**
 - All commodities used in the file should be declared in META
@@ -57,19 +57,20 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 
 ### 3.3 Entities
 
-| Prefix | Entity Type | Mnemonic     | Description                              | Examples                    |
-|--------|-------------|--------------|------------------------------------------|-----------------------------|
-| `@`    | Account     | "at"         | Places where assets sit                  | `@Checking`, `@Visa`        |
-| `&`    | Category    | "&"          | Budget categories (income/expense flows) | `&Groceries`, `&Job:Salary` |
-| `#`    | Tag         | "hashtag"    | Metadata for search/grouping             | `#amazon`, `#q1`            |
-| (none) | Commodity   |              | Standard currencies or assets            | `USD`, `EUR`, `AAPL`        |
+| Prefix | Entity Type | Mnemonic  | Description                              | Examples                    |
+| ------ | ----------- | --------- | ---------------------------------------- | --------------------------- |
+| `@`    | Account     | "at"      | Places where assets sit                  | `@Checking`, `@Visa`        |
+| `&`    | Category    | "&"       | Budget categories (income/expense flows) | `&Groceries`, `&Job:Salary` |
+| `#`    | Tag         | "hashtag" | Metadata for search/grouping             | `#amazon`, `#project:q1`    |
+| (none) | Commodity   |           | Standard currencies or assets            | `USD`, `EUR`, `AAPL`        |
 
 **Hierarchical Names:**
-Accounts and categories support hierarchical naming using `:` as separator:
+Accounts, categories, and tags support hierarchical naming using `:` as separator:
 
 ```text
 @Assets:Bank:Checking     ; nested account
 &Expenses:Food:Groceries  ; nested category
+#vendor:traderjoes        ; nested tag
 ```
 
 - Transactions can target any level (parent or leaf)
@@ -81,7 +82,7 @@ Accounts and categories support hierarchical naming using `:` as separator:
 Transactions use **sign-based semantics** within an account block: the sign indicates how the entry changes the **current account’s signed balance**.
 
 | Sign | Meaning (within an `@Account` block) |
-|------|--------------------------------------|
+| ---- | ------------------------------------ |
 | `+`  | Increases this account’s balance     |
 | `-`  | Decreases this account’s balance     |
 
@@ -110,25 +111,25 @@ Ledger entries are either:
 - a **transaction** (`AMOUNT ...`), or
 - an **assertion** (`== AMOUNT`)
 
-| Component | Required | Description                                      |
-|-----------|----------|--------------------------------------------------|
-| DATE      | Yes      | YYYY-MM-DD format                                |
-| AMOUNT    | Yes      | Signed amount with optional commodity            |
-| TARGET    | Yes      | `@Account` or `&Category`                        |
-| CATEGORY  | No       | `&Category` for budget tracking on transfers     |
-| TAG       | No       | One or more `#tag` for metadata                  |
-| comment   | No       | Text after `;`                                   |
+| Component | Required | Description                                  |
+| --------- | -------- | -------------------------------------------- |
+| DATE      | Yes      | YYYY-MM-DD format                            |
+| AMOUNT    | Yes      | Signed amount with optional commodity        |
+| TARGET    | Yes      | `@Account`, `&Category`, or amount (swap)    |
+| CATEGORY  | No       | `&Category` for budget tracking on transfers |
+| TAG       | No       | One or more `#tag` for metadata              |
+| comment   | No       | Text after `;`                               |
 
 **Transaction Types:**
 
-| Type                  | Syntax                          | Description                          |
-|-----------------------|---------------------------------|--------------------------------------|
-| **Expense**           | `-100 $ &Groceries`             | Spend from account to category       |
-| **Income**            | `+3000 $ &Job:Salary`           | Receive into account                 |
-| **Transfer Out**      | `-1000 $ @Savings`              | Move to another account              |
-| **Transfer In**       | `+1000 $ @Checking`             | Receive from another account         |
-| **Budgeted Transfer** | `-1000 $ @Brokerage &Investing` | Transfer to untracked with category  |
-| **Swap**              | `-1000 $ +6.5 AAPL`              | Swap commodities within an account   |
+| Type                  | Syntax                          | Description                         |
+| --------------------- | ------------------------------- | ----------------------------------- |
+| **Expense**           | `-100 $ &Groceries`             | Spend from account to category      |
+| **Income**            | `+3000 $ &Job:Salary`           | Receive into account                |
+| **Transfer Out**      | `-1000 $ @Savings`              | Move to another account             |
+| **Transfer In**       | `+1000 $ @Checking`             | Receive from another account        |
+| **Budgeted Transfer** | `-1000 $ @Brokerage &Investing` | Transfer to untracked with category |
+| **Swap**              | `-1000 $ +6.5 AAPL`             | Swap commodities within an account  |
 
 **Examples:**
 
@@ -241,7 +242,7 @@ amount          = SIGN? SYMBOL? NUMBER SYMBOL? COMMODITY?
 target          = account | category
 account         = "@" IDENTIFIER (":" IDENTIFIER)*
 category        = "&" IDENTIFIER (":" IDENTIFIER)*
-tag             = "#" IDENTIFIER
+tag             = "#" IDENTIFIER (":" IDENTIFIER)*
 comment         = ";" TEXT
 ```
 
@@ -249,44 +250,44 @@ comment         = ";" TEXT
 
 ### 5.1 Transaction Requirements
 
-| Rule | Description |
-|------|-------------|
+| Rule     | Description                                                                                         |
+| -------- | --------------------------------------------------------------------------------------------------- |
 | **V001** | Every transaction requires: amount, then a target (`@Account`, `&Category`, or an amount for swaps) |
-| **V002** | Commodity must be declared in META (via `commodity:` or `alias:`) |
-| **V003** | Amount must be a valid number |
-| **V004** | Date must be valid (YYYY-MM-DD format) |
-| **V005** | Components must follow canonical order: amount, target, category, tags |
-| **V006** | Optional category is only valid when target is an account (no double categorization) |
-| **V007** | Swap transactions use a second amount as the “target”; category is not allowed (warning) |
+| **V002** | Commodity must be declared in META (via `commodity:` or `alias:`)                                   |
+| **V003** | Amount must be a valid number                                                                       |
+| **V004** | Date must be valid (YYYY-MM-DD format)                                                              |
+| **V005** | Components must follow canonical order: amount, target, category, tags                              |
+| **V006** | Optional category is only valid when target is an account (no double categorization)                |
+| **V007** | Swap transactions use a second amount as the “target”; category is not allowed (warning)            |
 
 ### 5.2 Reference Validation
 
-| Rule | Description |
-|------|-------------|
-| **V010** | Referenced accounts must exist (declared in START or LEDGER) |
+| Rule     | Description                                                   |
+| -------- | ------------------------------------------------------------- |
+| **V010** | Referenced accounts must exist (declared in START or LEDGER)  |
 | **V011** | Referenced categories should exist in BUDGET (warning if not) |
-| **V012** | Referenced commodities must be declared in META |
+| **V012** | Referenced commodities must be declared in META               |
 
 ### 5.3 Budget Validation
 
-| Rule | Description |
-|------|-------------|
-| **V020** | Category names form a single namespace across BUDGET and LEDGER |
-| **V021** | Transfers FROM budget accounts TO no-budget accounts require a category |
+| Rule     | Description                                                                                     |
+| -------- | ----------------------------------------------------------------------------------------------- |
+| **V020** | Category names form a single namespace across BUDGET and LEDGER                                 |
+| **V021** | Transfers FROM budget accounts TO no-budget accounts require a category                         |
 | **V022** | Unallocated budget (income minus total allocations) should not be negative per period (warning) |
 
 ### 5.4 Assertion Validation
 
-| Rule | Description |
-|------|-------------|
+| Rule     | Description                                               |
+| -------- | --------------------------------------------------------- |
 | **V030** | `==` assertions must match computed balance at that point |
 
 ### 5.5 Structural Validation
 
-| Rule | Description |
-|------|-------------|
-| **V040** | START entries require: account, amount |
-| **V041** | BUDGET entries require: category, amount |
+| Rule     | Description                                                                |
+| -------- | -------------------------------------------------------------------------- |
+| **V040** | START entries require: account, amount                                     |
+| **V041** | BUDGET entries require: category, amount                                   |
 | **V042** | Dates within an account block should be chronological (warning, not error) |
 
 ## 6. Semantic Rules
@@ -298,30 +299,30 @@ comment         = ";" TEXT
 
 ## 7. Error Types
 
-| Code   | Category        | Description                                    |
-|--------|-----------------|------------------------------------------------|
-| E001   | Syntax          | Invalid token or unexpected character          |
-| E002   | Syntax          | Malformed amount (bad number format)           |
-| E003   | Syntax          | Invalid date format                            |
-| E004   | Syntax          | Missing required transaction component         |
-| E005   | Reference       | Unknown account reference                       |
-| E006   | Reference       | Unknown category reference                      |
-| E007   | Reference       | Unknown commodity                               |
-| E008   | Validation      | Assertion failed (balance mismatch)             |
-| E009   | Syntax          | Invalid component order in transaction          |
-| E010   | Validation      | Transfer to no-budget account missing category  |
-| W003   | Warning         | Unverified entry (`?`) needs user confirmation  |
-| W001   | Warning         | Non-chronological dates in account block        |
-| W002   | Warning         | Expense category not in budget                  |
+| Code | Category   | Description                                    |
+| ---- | ---------- | ---------------------------------------------- |
+| E001 | Syntax     | Invalid token or unexpected character          |
+| E002 | Syntax     | Malformed amount (bad number format)           |
+| E003 | Syntax     | Invalid date format                            |
+| E004 | Syntax     | Missing required transaction component         |
+| E005 | Reference  | Unknown account reference                      |
+| E006 | Reference  | Unknown category reference                     |
+| E007 | Reference  | Unknown commodity                              |
+| E008 | Validation | Assertion failed (balance mismatch)            |
+| E009 | Syntax     | Invalid component order in transaction         |
+| E010 | Validation | Transfer to no-budget account missing category |
+| W003 | Warning    | Unverified entry (`?`) needs user confirmation |
+| W001 | Warning    | Non-chronological dates in account block       |
+| W002 | Warning    | Expense category not in budget                 |
 
 ---
 
 ## Changelog
 
-| Version | Date       | Changes                                                      |
-|---------|------------|--------------------------------------------------------------|
-| 0.1.0   | 2026-01-01 | Initial specification                                        |
+| Version | Date       | Changes                                                                                             |
+| ------- | ---------- | --------------------------------------------------------------------------------------------------- |
+| 0.1.0   | 2026-01-01 | Initial specification                                                                               |
 | 0.2.0   | 2026-01-02 | Simplified syntax: +/- signs only, canonical order, & for categories, # for tags, declarative START |
-| 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                            |
-| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount  |
-| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line               |
+| 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                                                                   |
+| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount                                        |
+| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line                                                     |
