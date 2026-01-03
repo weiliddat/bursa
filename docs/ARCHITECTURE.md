@@ -46,12 +46,15 @@ function parse(source: string): ParseResult {
 	const p = createParser(source);
 
 	while (!atEnd(p)) {
-		skipWhitespaceAndComments(p);
+		skipBlankLines(p);
 		if (atEnd(p)) break;
 
 		const ch = peek(p);
 
-		if (ch === ">") {
+		if (ch === ";") {
+			// Standalone comment line
+			skipLine(p);
+		} else if (ch === ">") {
 			// >>> SECTION
 			parseSectionMarker(p);
 		} else if (p.section === "META") {
@@ -64,7 +67,7 @@ function parse(source: string): ParseResult {
 			parseLedgerLine(p);
 		} else {
 			// Content before any section
-			addError(p, "E001", "Content before section marker");
+			addError(p, "E011", "Content before section marker");
 			skipLine(p);
 		}
 	}
@@ -198,10 +201,11 @@ function peekCode(p: Parser): number; // p.source.charCodeAt(p.pos)
 function advance(p: Parser): string; // consume one char
 function atEnd(p: Parser): boolean;
 
-// Whitespace
-function skipWhitespace(p: Parser): void;
-function skipWhitespaceAndComments(p: Parser): void;
-function skipLine(p: Parser): void;
+// Whitespace (line-aware)
+function skipHorizontalWhitespace(p: Parser): void; // spaces/tabs only
+function skipToEOL(p: Parser): void; // skip to newline (for comments)
+function skipLine(p: Parser): void; // skip past newline
+function skipBlankLines(p: Parser): void; // consume \n runs
 
 // Matchers
 function match(p: Parser, expected: string): boolean; // consume if match
@@ -223,10 +227,10 @@ function spanFrom(p: Parser, start: { line: number; col: number }): Span;
 
 **Post-parsing (semantic):**
 - E005: Unknown account
-- E006: Unknown category
 - E007: Unknown commodity
 - E008: Assertion mismatch
 - E010: Untracked transfer missing category
+- E011: Content before section marker
 
 **Warnings:**
 - W001: Non-chronological dates

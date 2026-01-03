@@ -313,14 +313,14 @@ comment         = ";" TEXT
 | E003 | Syntax     | Invalid date format                            |
 | E004 | Syntax     | Missing required transaction component         |
 | E005 | Reference  | Unknown account reference                      |
-| E006 | Reference  | Unknown category reference                     |
 | E007 | Reference  | Unknown commodity                              |
 | E008 | Validation | Assertion failed (balance mismatch)            |
 | E009 | Syntax     | Invalid component order in transaction         |
 | E010 | Validation | Transfer to untracked account missing category |
-| W003 | Warning    | Unverified entry (`?`) needs user confirmation |
+| E011 | Syntax     | Content before section marker                  |
 | W001 | Warning    | Non-chronological dates in account block       |
 | W002 | Warning    | Expense category not in budget                 |
+| W003 | Warning    | Unverified entry (`?`) needs user confirmation |
 
 ---
 
