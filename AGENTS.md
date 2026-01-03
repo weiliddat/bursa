@@ -1,5 +1,11 @@
 # Bursa - Agent Guidelines
 
+## Philosophy
+
+> "Everything should be made as simple as possible, but not simpler."
+
+Iterate on concepts, features, and UX—then pare down until nothing more can be removed. The result should be austere yet complete, obvious yet elegant. Simplicity here is a product of intention and thoughtfulness, not naiveness or laziness.
+
 ## Project Overview
 
 Bursa is a minimalistic plain-text personal finance tool with implicit double-entry accounting. See `docs/SPEC.md` for the language specification.
@@ -72,6 +78,7 @@ bursa/
 - Update this file when adding new commands or conventions
 
 **When making changes that affect the language or system design:**
+
 1. Read `docs/SPEC.md`, `docs/ARCHITECTURE.md`, and `examples/example.bursa` first
 2. Update all three files to maintain consistency
 3. Bump version numbers in changelogs when making substantive changes

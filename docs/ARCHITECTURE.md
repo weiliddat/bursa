@@ -84,6 +84,7 @@ function parse(source: string): ParseResult {
 | `#`        | Tag                              |
 | `+` / `-`  | Signed amount                    |
 | `0-9`      | Date or unsigned amount          |
+| `$£€`…     | Commodity alias                  |
 | `?`        | Unverified entry marker          |
 | `=`        | Assertion (`==`)                 |
 | `;`        | Comment (skip to EOL)            |

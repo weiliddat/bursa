@@ -1,6 +1,5 @@
 >>> META
 ; Commodities (currencies and assets)
-default: USD
 commodity: USD
 commodity: EUR
 commodity: MYR
@@ -16,7 +15,7 @@ alias: € = EUR
 alias: RM = MYR
 
 ; Budget tracking (investments excluded from budget categories)
-no-budget: @Brokerage
+untracked: @Brokerage
 
 >>> START
 2026-01-01
