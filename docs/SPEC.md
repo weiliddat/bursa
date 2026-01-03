@@ -1,6 +1,6 @@
 # Bursa Language Specification
 
-> Version: 0.2.7 (Draft)
+> Version: 0.3.0 (Draft)
 > Last Updated: 2026-01-03
 
 ## 1. Core Philosophy
@@ -18,7 +18,6 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 | Section      | Purpose                                           |
 | ------------ | ------------------------------------------------- |
 | `>>> META`   | Config (commodities, aliases, account properties) |
-| `>>> START`  | Opening balances (declarative)                    |
 | `>>> BUDGET` | Category allocations                              |
 | `>>> LEDGER` | The transaction log                               |
 
@@ -132,6 +131,7 @@ Ledger entries are either:
 
 | Type                  | Syntax                          | Description                         |
 | --------------------- | ------------------------------- | ----------------------------------- |
+| **Opening Balance**   | `+5000 $ &Opening:Balance`      | Initial account balance             |
 | **Expense**           | `-100 $ &Groceries`             | Spend from account to category      |
 | **Income**            | `+3000 $ &Job:Salary`           | Receive into account                |
 | **Transfer Out**      | `-1000 $ @Savings`              | Move to another account             |
@@ -143,10 +143,27 @@ Ledger entries are either:
 
 ```text
 @Checking
+  2026-01-01 +5000 $ &Opening:Balance         ; opening balance
   2026-01-15 +3000 $ &Job:Salary              ; payday
   2026-01-16 -100 $ &Groceries #traderjoes    ; expense with tag
   2026-01-20 -1000 $ @Brokerage &Investing    ; transfer to investment
   2026-01-25 -100 $ @Maybank                  ; cross-currency driver
+```
+
+**Opening Balances:**
+
+Opening balances are regular transactions that flow through a category (conventionally `&Opening:Balance` or `&Prior:Year`). This ensures:
+- All money has an explicit source in category terms
+- Budget tracking works correctly from day one
+- Double-entry integrity is maintained
+
+For accounts with multiple commodities, use one transaction per commodity:
+
+```text
+@Brokerage
+  2026-01-01 +1000 $ &Opening:Balance
+  2026-01-01 +50 AAPL &Opening:Balance
+  2026-01-01 +10 SPY &Opening:Balance
 ```
 
 ### 3.5 Advanced Logic
@@ -225,10 +242,6 @@ meta_line       = "commodity:" COMMODITY
 account_pattern_list = account_pattern ("," account_pattern)*
 account_pattern = "@" IDENTIFIER (":" IDENTIFIER)* (":" "*")?   ; supports @foo:* wildcards
 
-; START section (declarative balances)
-start_block     = DATE NEWLINE start_entry*
-start_entry     = account amount+           ; leading indentation is ignored
-
 ; BUDGET section
 budget_block    = YEAR_MONTH NEWLINE budget_entry*
 budget_entry    = category amount
@@ -270,11 +283,11 @@ comment         = ";" TEXT
 
 ### 5.2 Reference Validation
 
-| Rule     | Description                                                   |
-| -------- | ------------------------------------------------------------- |
-| **V010** | Referenced accounts must exist (declared in START or LEDGER)  |
-| **V011** | Referenced categories should exist in BUDGET (warning if not) |
-| **V012** | Referenced commodities must be declared in META               |
+| Rule     | Description                                                                          |
+| -------- | ------------------------------------------------------------------------------------ |
+| **V010** | Referenced accounts must exist (declared via `@Account` block or as transfer target) |
+| **V011** | Referenced categories should exist in BUDGET (warning if not)                        |
+| **V012** | Referenced commodities must be declared in META                                      |
 
 ### 5.3 Budget Validation
 
@@ -294,9 +307,8 @@ comment         = ";" TEXT
 
 | Rule     | Description                                                                |
 | -------- | -------------------------------------------------------------------------- |
-| **V040** | START entries require: account, amount                                     |
-| **V041** | BUDGET entries require: category, amount                                   |
-| **V042** | Dates within an account block should be chronological (warning, not error) |
+| **V040** | BUDGET entries require: category, amount                                   |
+| **V041** | Dates within an account block should be chronological (warning, not error) |
 
 ## 6. Semantic Rules
 
@@ -338,3 +350,4 @@ comment         = ";" TEXT
 | 0.2.5   | 2026-01-02 | Renamed to tracked/untracked; removed budget: directive; added wildcard support for untracked:      |
 | 0.2.6   | 2026-01-02 | Removed default: directive; amounts must always have explicit commodity                             |
 | 0.2.7   | 2026-01-03 | Indentation is optional; parsing dispatch uses first non-whitespace character at line start         |
+| 0.3.0   | 2026-01-03 | Removed START section; opening balances are now regular transactions with `&Opening:Balance`        |

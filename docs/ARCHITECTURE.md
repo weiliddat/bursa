@@ -1,6 +1,6 @@
 # Bursa Architecture
 
-> Version: 0.5.0 (Draft)
+> Version: 0.6.0 (Draft)
 > Last Updated: 2026-01-03
 
 ## Overview
@@ -25,8 +25,7 @@ interface Parser {
 	col: number;
 
 	// Current context
-	section: "META" | "START" | "BUDGET" | "LEDGER" | null;
-	currentDate: string | null; // for START block headers
+	section: "META" | "BUDGET" | "LEDGER" | null;
 	currentPeriod: string | null; // for BUDGET block headers
 	currentAccount: AccountRef | null; // for LEDGER @Account headers
 
@@ -62,8 +61,6 @@ function parse(source: string): ParseResult {
 			parseSectionMarker(p);
 		} else if (p.section === "META") {
 			parseMetaDirective(p);
-		} else if (p.section === "START") {
-			parseStartLine(p);
 		} else if (p.section === "BUDGET") {
 			parseBudgetLine(p);
 		} else if (p.section === "LEDGER") {
@@ -98,8 +95,6 @@ Inline comments (`; ...`) are handled by the relevant line parser (e.g., `parseL
 | Section  | First non-ws char (at line start) | Meaning                                |
 | -------- | --------------------------------- | -------------------------------------- |
 | `META`   | `a-z` / `A-Z`                     | Directive keyword (e.g., `commodity:`) |
-| `START`  | `@`                               | Opening entry                          |
-| `START`  | `0-9`                             | Date header (`YYYY-MM-DD`)             |
 | `BUDGET` | `0-9`                             | Period header (`YYYY-MM`)              |
 | `BUDGET` | `&`                               | Budget entry                           |
 | `LEDGER` | `@`                               | Account header                         |
@@ -110,7 +105,6 @@ Inline comments (`; ...`) are handled by the relevant line parser (e.g., `parseL
 | Section  | Context State                         | Emits                                     |
 | -------- | ------------------------------------- | ----------------------------------------- |
 | `META`   | —                                     | Populates `data.meta`                     |
-| `START`  | `currentDate` from date header        | `Opening` → `data.ledger`                 |
 | `BUDGET` | `currentPeriod` from YYYY-MM header   | `BudgetEntry` → `data.budget`             |
 | `LEDGER` | `currentAccount` from `@Account` line | `Transaction`/`Assertion` → `data.ledger` |
 
@@ -150,15 +144,7 @@ interface BudgetEntry {
 	span: Span;
 }
 
-type LedgerEntry = Opening | Transaction | Assertion;
-
-interface Opening {
-	kind: "opening";
-	date: string;
-	account: AccountRef;
-	amounts: Amount[]; // multi-commodity
-	span: Span;
-}
+type LedgerEntry = Transaction | Assertion;
 
 interface Transaction {
 	kind: "transaction";
@@ -308,7 +294,8 @@ Use `examples/example.bursa` as canonical fixture.
 
 ## Changelog
 
-| Version | Date       | Changes                                            |
-| ------- | ---------- | -------------------------------------------------- |
-| 0.4.0   | 2026-01-02 | Fused single-pass parser, no lexer/AST             |
-| 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat |
+| Version | Date       | Changes                                                          |
+| ------- | ---------- | ---------------------------------------------------------------- |
+| 0.4.0   | 2026-01-02 | Fused single-pass parser, no lexer/AST                           |
+| 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat               |
+| 0.6.0   | 2026-01-03 | Removed START section; opening balances are regular transactions |
