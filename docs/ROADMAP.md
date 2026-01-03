@@ -16,7 +16,6 @@ Build a fused single-pass parser that reads `.bursa` files and produces a `Ledge
 ### Phase 1.2: Section Parsing
 
 - [ ] META section: `commodity:`, `alias:`, `untracked:`
-- [ ] START section: date headers, account + amounts
 - [ ] BUDGET section: period headers, category + amount
 - [ ] LEDGER section: account blocks, transactions, assertions
 

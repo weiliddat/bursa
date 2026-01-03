@@ -82,3 +82,4 @@ bursa/
 1. Read `docs/SPEC.md`, `docs/ARCHITECTURE.md`, and `examples/example.bursa` first
 2. Update all three files to maintain consistency
 3. Bump version numbers in changelogs when making substantive changes
+4. Update `docs/ROADMAP.md` for any progress or roadmap changes
