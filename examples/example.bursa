@@ -4,10 +4,7 @@ commodity: USD
 commodity: EUR
 commodity: MYR
 commodity: AAPL
-commodity: SPY
-commodity: VOO
 commodity: BTC
-commodity: ETH
 
 ; Symbol aliases
 alias: $ = USD
@@ -32,10 +29,7 @@ untracked: @Brokerage
   2026-01-01 +1000 $ &Opening:Balance
   2026-01-01 +500 € &Opening:Balance
   2026-01-01 +50 AAPL &Opening:Balance
-  2026-01-01 +10 SPY &Opening:Balance
-  2026-01-01 +5 VOO &Opening:Balance
   2026-01-01 +0.25 BTC &Opening:Balance
-  2026-01-01 +2.5 ETH &Opening:Balance
 
 ; === 2026 Transactions ===
 @Checking
@@ -45,10 +39,9 @@ untracked: @Brokerage
   2026-01-25 -$100 @Maybank                  ; cross-currency transfer
 
 @Brokerage
-  ; Swapping cash for stock (no category needed, account is no-budget)
+  ; Swapping cash for stock (no category needed, account is untracked)
   2026-01-21 -1000 $ +6.5 AAPL
-  2026-01-22 -500 $ +3.2 VOO                ; buying ETF
-  2026-02-01 -2 SPY +1200 $                 ; selling ETF
+  2026-01-22 -500 € +0.05 BTC                ; multi-currency swap: EUR for crypto
 
 @Maybank
   ; Cross-currency transfer receiver (USD -> MYR)

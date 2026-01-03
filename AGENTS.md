@@ -6,6 +6,8 @@
 
 Iterate on concepts, features, and UX—then pare down until nothing more can be removed. The result should be austere yet complete, obvious yet elegant. Simplicity here is a product of intention and thoughtfulness, not naiveness or laziness.
 
+This applies equally to code, documentation, examples, and tests. Each should be minimal yet sufficient—no extraneous words, no redundant test cases, no over-explained examples.
+
 ## Project Overview
 
 Bursa is a minimalistic plain-text personal finance tool with implicit double-entry accounting. See `docs/SPEC.md` for the language specification.
@@ -40,7 +42,7 @@ bursa/
 ├── examples/
 │   └── example.bursa    # Canonical test fixture
 ├── src/
-│   ├── parser/          # Lexer, parser, AST (Phase 1)
+│   ├── parser/          # Fused single-pass parser (Phase 1)
 │   ├── domain/          # Balance computation, budgets (Phase 2)
 │   └── ui/              # SolidJS components (Phase 3+)
 └── ...
@@ -66,8 +68,8 @@ bursa/
 1. **Single-file format** with section markers (`>>> META`, etc.)
 2. **Implicit double-entry** - user writes single-entry, system tracks flows
 3. **Fine-grained reactivity** - use SolidJS signals/memos for derived data
-4. **Performance** - hand-written lexer/parser for speed and intellisense
-5. **Position tracking** - every AST node includes source location
+4. **Performance** - fused single-pass parser for speed and intellisense
+5. **Position tracking** - every model includes source spans
 
 ## Documentation
 

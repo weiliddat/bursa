@@ -1,6 +1,6 @@
 # Bursa Architecture
 
-> Version: 0.6.0 (Draft)
+> Version: 0.7.0 (Draft)
 > Last Updated: 2026-01-03
 
 ## Overview
@@ -9,11 +9,9 @@ Bursa uses a **fused single-pass parser** — no separate lexer, no token object
 
 ## 1. Design Principles
 
-1. **Fused lexer/parser:** Read characters directly, no intermediate tokens
-2. **Single cursor:** One `pos` integer tracks position in source
-3. **LL(1) lookahead:** Peek the first non-whitespace char at line start to branch
-4. **Direct accumulation:** Build `Ledger` as we parse, not an AST
-5. **Minimal allocations:** Only create objects for the final result
+1. **Fused lexer/parser** using a single cursor position.
+2. **LL(1) line and token dispatch** from the first non-whitespace character.
+3. **Directly build `Ledger`** (no AST, minimal allocations).
 
 ## 2. Parser State
 
@@ -230,24 +228,9 @@ function spanFrom(p: Parser, start: { line: number; col: number }): Span;
 
 ## 6. Validation
 
-**During parsing (syntax):**
-- E001: Invalid character
-- E002: Malformed amount
-- E003: Invalid date
-- E004: Missing required component
-- E009: Invalid order
+See SPEC.md §5 for the canonical list of diagnostics.
 
-**Post-parsing (semantic):**
-- E005: Unknown account
-- E007: Unknown commodity
-- E008: Assertion mismatch
-- E010: Untracked transfer missing category
-- E011: Content before section marker
-
-**Warnings:**
-- W001: Non-chronological dates
-- W002: Category not in budget
-- W003: Unverified entry
+**Summary:** Syntax errors (E001–E004, E009, E011), semantic errors (E005, E007, E008, E010), warnings (W001–W003).
 
 ## 7. Public API
 
@@ -299,3 +282,4 @@ Use `examples/example.bursa` as canonical fixture.
 | 0.4.0   | 2026-01-02 | Fused single-pass parser, no lexer/AST                           |
 | 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat               |
 | 0.6.0   | 2026-01-03 | Removed START section; opening balances are regular transactions |
+| 0.7.0   | 2026-01-03 | Simplified Design Principles and Validation (defer to SPEC.md)   |

@@ -36,13 +36,9 @@ Build a fused single-pass parser that reads `.bursa` files and produces a `Ledge
 ### Phase 1.5: Test Coverage
 
 - [ ] Parse `examples/example.bursa` end-to-end
-- [ ] Unit tests for each syntax rule (V001–V006)
-- [ ] Unit tests for reference validation (V010–V012)
-- [ ] Unit tests for budget validation (V020–V022)
-- [ ] Unit tests for assertion validation (V030)
-- [ ] Unit tests for structural validation (V040–V042)
-- [ ] Unit tests for all error codes (E001–E010)
-- [ ] Unit tests for all warning codes (W001–W003)
+- [ ] Unit tests for all validation rules (Vxxx per SPEC.md)
+- [ ] Unit tests for all error codes (Exxx per SPEC.md)
+- [ ] Unit tests for all warning codes (Wxxx per SPEC.md)
 
 ---
 
