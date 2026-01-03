@@ -1,7 +1,7 @@
 # Bursa Language Specification
 
-> Version: 0.2.6 (Draft)
-> Last Updated: 2026-01-02
+> Version: 0.2.7 (Draft)
+> Last Updated: 2026-01-03
 
 ## 1. Core Philosophy
 
@@ -29,6 +29,7 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 | Feature            | Rule                                                              |
 | ------------------ | ----------------------------------------------------------------- |
 | **Comments**       | Any text following `;` is ignored                                 |
+| **Indentation**    | Optional for readability; leading spaces/tabs are ignored         |
 | **Aliases**        | Symbols mapped to ISO codes in META (e.g., `$` → `USD`)           |
 | **Number Format**  | Currency symbols before OR after number (e.g., `$500` or `500 $`) |
 | **Sign Placement** | Sign must be at very start (e.g., `-$500`, `-500 $`, `+RM50`)     |
@@ -226,15 +227,15 @@ account_pattern = "@" IDENTIFIER (":" IDENTIFIER)* (":" "*")?   ; supports @foo:
 
 ; START section (declarative balances)
 start_block     = DATE NEWLINE start_entry*
-start_entry     = INDENT account amount+    ; multiple amounts for semantic grouping
+start_entry     = account amount+           ; leading indentation is ignored
 
 ; BUDGET section
 budget_block    = YEAR_MONTH NEWLINE budget_entry*
-budget_entry    = INDENT category amount
+budget_entry    = category amount
 
 ; LEDGER section
 ledger_block    = account NEWLINE ledger_entry*
-ledger_entry    = INDENT unverified? DATE (transaction | assertion) comment?
+ledger_entry    = unverified? DATE (transaction | assertion) comment?
 unverified      = "?"                        ; unverified marker
 
 ; Transaction: amount flows to target
@@ -336,3 +337,4 @@ comment         = ";" TEXT
 | 0.2.4   | 2026-01-02 | Unified `target` primitive: encompasses amount, category, and account (with optional category)      |
 | 0.2.5   | 2026-01-02 | Renamed to tracked/untracked; removed budget: directive; added wildcard support for untracked:      |
 | 0.2.6   | 2026-01-02 | Removed default: directive; amounts must always have explicit commodity                             |
+| 0.2.7   | 2026-01-03 | Indentation is optional; parsing dispatch uses first non-whitespace character at line start         |

@@ -11,7 +11,7 @@ Bursa uses a **fused single-pass parser** — no separate lexer, no token object
 
 1. **Fused lexer/parser:** Read characters directly, no intermediate tokens
 2. **Single cursor:** One `pos` integer tracks position in source
-3. **LL(1) lookahead:** Peek next non-whitespace char to branch
+3. **LL(1) lookahead:** Peek the first non-whitespace char at line start to branch
 4. **Direct accumulation:** Build `Ledger` as we parse, not an AST
 5. **Minimal allocations:** Only create objects for the final result
 
@@ -49,10 +49,13 @@ function parse(source: string): ParseResult {
 		skipBlankLines(p);
 		if (atEnd(p)) break;
 
+		// Indentation is cosmetic: ignore leading horizontal whitespace at line start.
+		skipHorizontalWhitespace(p);
+
 		const ch = peek(p);
 
 		if (ch === ";") {
-			// Standalone comment line
+			// Comment-only line (supports indentation)
 			skipLine(p);
 		} else if (ch === ">") {
 			// >>> SECTION
@@ -67,7 +70,7 @@ function parse(source: string): ParseResult {
 			parseLedgerLine(p);
 		} else {
 			// Content before any section
-			addError(p, "E011", "Content before section marker");
+			addError(p, "E001", "Content before section marker");
 			skipLine(p);
 		}
 	}
@@ -77,30 +80,53 @@ function parse(source: string): ParseResult {
 }
 ```
 
-### 3.1 Character-Level Branching (LL(1))
+### 3.1 Line-Start Branching (LL(1))
 
-| First Char | Meaning                          |
-| ---------- | -------------------------------- |
-| `>`        | Section marker (`>>>`)           |
-| `@`        | Account reference                |
-| `&`        | Category reference               |
-| `#`        | Tag                              |
-| `+` / `-`  | Signed amount                    |
-| `0-9`      | Date or unsigned amount          |
-| `$£€`…     | Commodity alias                  |
-| `?`        | Unverified entry marker          |
-| `=`        | Assertion (`==`)                 |
-| `;`        | Comment (skip to EOL)            |
-| `\n`       | Blank line (skip)                |
+Indentation is optional. All line classification is done using the **first non-whitespace character at line start**.
+Inline comments (`; ...`) are handled by the relevant line parser (e.g., `parseLedgerLine`), not by the top-level loop.
+
+**Top-level line dispatch**
+
+| First non-ws char (at line start) | Meaning                                 |
+| --------------------------------- | --------------------------------------- |
+| `;`                               | Comment-only line (skip)                |
+| `>`                               | Section marker (`>>>`)                  |
+| _(anything else)_                 | Dispatch to current section line parser |
+
+**Section line starts (after selecting a section)**
+
+| Section  | First non-ws char (at line start) | Meaning                                |
+| -------- | --------------------------------- | -------------------------------------- |
+| `META`   | `a-z` / `A-Z`                     | Directive keyword (e.g., `commodity:`) |
+| `START`  | `@`                               | Opening entry                          |
+| `START`  | `0-9`                             | Date header (`YYYY-MM-DD`)             |
+| `BUDGET` | `0-9`                             | Period header (`YYYY-MM`)              |
+| `BUDGET` | `&`                               | Budget entry                           |
+| `LEDGER` | `@`                               | Account header                         |
+| `LEDGER` | `?` / `0-9`                       | Ledger entry (optional `?`, then date) |
 
 ### 3.2 Section-Specific Parsing
 
-| Section   | Context State                         | Emits                                     |
-| --------- | ------------------------------------- | ----------------------------------------- |
-| `META`    | —                                     | Populates `data.meta`                     |
-| `START`   | `currentDate` from date header        | `Opening` → `data.ledger`                 |
-| `BUDGET`  | `currentPeriod` from YYYY-MM header   | `BudgetEntry` → `data.budget`             |
-| `LEDGER`  | `currentAccount` from `@Account` line | `Transaction`/`Assertion` → `data.ledger` |
+| Section  | Context State                         | Emits                                     |
+| -------- | ------------------------------------- | ----------------------------------------- |
+| `META`   | —                                     | Populates `data.meta`                     |
+| `START`  | `currentDate` from date header        | `Opening` → `data.ledger`                 |
+| `BUDGET` | `currentPeriod` from YYYY-MM header   | `BudgetEntry` → `data.budget`             |
+| `LEDGER` | `currentAccount` from `@Account` line | `Transaction`/`Assertion` → `data.ledger` |
+
+### 3.3 Token-Start Branching (LL(1))
+
+Inside a line parser (e.g., within a ledger entry), LL(1) decisions use the **next non-whitespace character at the start of the next token**.
+
+| Token start char | Meaning                                   |
+| ---------------- | ----------------------------------------- |
+| `+` / `-`        | Signed amount                             |
+| `0-9`            | Unsigned number (e.g., amount value/date) |
+| `$£€`…           | Amount with alias-leading symbol          |
+| `@`              | Account ref                               |
+| `&`              | Category ref                              |
+| `#`              | Tag ref                                   |
+| `;`              | Inline comment (consume to EOL)           |
 
 ## 4. Domain Models
 
@@ -202,7 +228,7 @@ function advance(p: Parser): string; // consume one char
 function atEnd(p: Parser): boolean;
 
 // Whitespace (line-aware)
-function skipHorizontalWhitespace(p: Parser): void; // spaces/tabs only
+function skipHorizontalWhitespace(p: Parser): void; // spaces/tabs only (never consumes newline)
 function skipToEOL(p: Parser): void; // skip to newline (for comments)
 function skipLine(p: Parser): void; // skip past newline
 function skipBlankLines(p: Parser): void; // consume \n runs
