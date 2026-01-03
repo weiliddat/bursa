@@ -1,6 +1,6 @@
 # Bursa Language Specification
 
-> Version: 0.2.5 (Draft)
+> Version: 0.2.6 (Draft)
 > Last Updated: 2026-01-02
 
 ## 1. Core Philosophy
@@ -35,14 +35,14 @@ For the prototype, we use a single text file divided into sections using `>>> [S
 
 ### 3.2 META Directives
 
-| Directive   | Syntax                  | Description                                |
-| ----------- | ----------------------- | ------------------------------------------ |
-| `default`   | `default: USD`          | Default commodity when none specified      |
-| `commodity` | `commodity: AAPL`       | Declare a valid commodity (for validation) |
-| `alias`     | `alias: $ = USD`        | Map symbol to commodity                    |
-| `untracked` | `untracked: @Brokerage` | Accounts excluded from budget tracking     |
+| Directive   | Syntax                  | Description                            |
+| ----------- | ----------------------- | -------------------------------------- |
+| `commodity` | `commodity: AAPL`       | Declare a valid commodity              |
+| `alias`     | `alias: $ = USD`        | Map symbol to commodity                |
+| `untracked` | `untracked: @Brokerage` | Accounts excluded from budget tracking |
 
 **Commodity Declaration:**
+- All amounts must include an explicit symbol or commodity
 - All commodities used in the file should be declared in META
 - Aliases implicitly declare both the symbol and the commodity
 - Unknown commodities in transactions will produce warnings
@@ -218,8 +218,7 @@ file            = section*
 section         = ">>>" SECTION_NAME NEWLINE block*
 
 ; META section
-meta_line       = "default:" COMMODITY
-                | "commodity:" COMMODITY
+meta_line       = "commodity:" COMMODITY
                 | "alias:" SYMBOL "=" COMMODITY
                 | "untracked:" account_pattern_list
 account_pattern_list = account_pattern ("," account_pattern)*
@@ -336,3 +335,4 @@ comment         = ";" TEXT
 | 0.2.3   | 2026-01-02 | START entries support multiple amounts per line                                                     |
 | 0.2.4   | 2026-01-02 | Unified `target` primitive: encompasses amount, category, and account (with optional category)      |
 | 0.2.5   | 2026-01-02 | Renamed to tracked/untracked; removed budget: directive; added wildcard support for untracked:      |
+| 0.2.6   | 2026-01-02 | Removed default: directive; amounts must always have explicit commodity                             |

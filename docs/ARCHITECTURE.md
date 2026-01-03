@@ -1,440 +1,283 @@
 # Bursa Architecture
 
-> Version: 0.2.3 (Draft)
-> Last Updated: 2026-01-02
+> Version: 0.5.0 (Draft)
+> Last Updated: 2026-01-03
 
 ## Overview
 
-Bursa is a client-side SPA built with SolidJS. The architecture separates concerns into three layers:
+Bursa uses a **fused single-pass parser** — no separate lexer, no token objects, no AST. A single cursor advances through the source string, building the final `Ledger` data structure directly.
 
+## 1. Design Principles
+
+1. **Fused lexer/parser:** Read characters directly, no intermediate tokens
+2. **Single cursor:** One `pos` integer tracks position in source
+3. **LL(1) lookahead:** Peek next non-whitespace char to branch
+4. **Direct accumulation:** Build `Ledger` as we parse, not an AST
+5. **Minimal allocations:** Only create objects for the final result
+
+## 2. Parser State
+
+```typescript
+interface Parser {
+	source: string;
+	pos: number;
+	line: number;
+	col: number;
+
+	// Current context
+	section: "META" | "START" | "BUDGET" | "LEDGER" | null;
+	currentDate: string | null; // for START block headers
+	currentPeriod: string | null; // for BUDGET block headers
+	currentAccount: AccountRef | null; // for LEDGER @Account headers
+
+	// Output (built as we parse)
+	data: Ledger;
+	errors: Diagnostic[];
+	warnings: Diagnostic[];
+}
 ```
-┌─────────────────────────────────────────────────────┐
-│                    UI Layer                         │
-│              (SolidJS Components)                   │
-├─────────────────────────────────────────────────────┤
-│                  Domain Layer                       │
-│     (Reactive Store, Computations, Commands)        │
-├─────────────────────────────────────────────────────┤
-│                  Parser Layer                       │
-│        (Lexer, Parser, AST, Validators)             │
-└─────────────────────────────────────────────────────┘
+
+## 3. Parsing Strategy
+
+**Peek → Decide → Consume**
+
+```typescript
+function parse(source: string): ParseResult {
+	const p = createParser(source);
+
+	while (!atEnd(p)) {
+		skipWhitespaceAndComments(p);
+		if (atEnd(p)) break;
+
+		const ch = peek(p);
+
+		if (ch === ">") {
+			// >>> SECTION
+			parseSectionMarker(p);
+		} else if (p.section === "META") {
+			parseMetaDirective(p);
+		} else if (p.section === "START") {
+			parseStartLine(p);
+		} else if (p.section === "BUDGET") {
+			parseBudgetLine(p);
+		} else if (p.section === "LEDGER") {
+			parseLedgerLine(p);
+		} else {
+			// Content before any section
+			addError(p, "E001", "Content before section marker");
+			skipLine(p);
+		}
+	}
+
+	validate(p); // Post-parse semantic checks
+	return { data: p.data, errors: p.errors, warnings: p.warnings };
+}
 ```
 
-## 1. Parser Layer
+### 3.1 Character-Level Branching (LL(1))
 
-### 1.1 Design Goals
+| First Char | Meaning                          |
+| ---------- | -------------------------------- |
+| `>`        | Section marker (`>>>`)           |
+| `@`        | Account reference                |
+| `&`        | Category reference               |
+| `#`        | Tag                              |
+| `+` / `-`  | Signed amount                    |
+| `0-9`      | Date or unsigned amount          |
+| `?`        | Unverified entry marker          |
+| `=`        | Assertion (`==`)                 |
+| `;`        | Comment (skip to EOL)            |
+| `\n`       | Blank line (skip)                |
 
-- **Performance:** Hand-written recursive descent parser (no generator)
-- **Incremental:** Future support for partial re-parsing
-- **Error Recovery:** Continue parsing after errors, collect all diagnostics
-- **Position Tracking:** Every AST node tracks source location for editor features
+### 3.2 Section-Specific Parsing
 
-### 1.2 Components
+| Section   | Context State                         | Emits                                     |
+| --------- | ------------------------------------- | ----------------------------------------- |
+| `META`    | —                                     | Populates `data.meta`                     |
+| `START`   | `currentDate` from date header        | `Opening` → `data.ledger`                 |
+| `BUDGET`  | `currentPeriod` from YYYY-MM header   | `BudgetEntry` → `data.budget`             |
+| `LEDGER`  | `currentAccount` from `@Account` line | `Transaction`/`Assertion` → `data.ledger` |
+
+## 4. Domain Models
+
+Built directly during parsing:
+
+```typescript
+interface Ledger {
+	meta: {
+		commodities: Set<string>;
+		aliases: Map<string, string>;
+		untrackedPatterns: string[];
+	};
+	budget: BudgetEntry[];
+	ledger: LedgerEntry[];
+}
+
+interface BudgetEntry {
+	period: string; // YYYY-MM
+	category: CategoryRef;
+	amount: Amount;
+	span: Span;
+}
+
+type LedgerEntry = Opening | Transaction | Assertion;
+
+interface Opening {
+	kind: "opening";
+	date: string;
+	account: AccountRef;
+	amounts: Amount[]; // multi-commodity
+	span: Span;
+}
+
+interface Transaction {
+	kind: "transaction";
+	date: string;
+	account: AccountRef; // the @Account block this was under
+	unverified: boolean;
+	amount: Amount;
+	target: Target;
+	tags: TagRef[];
+	comment: string | null;
+	span: Span;
+}
+
+interface Assertion {
+	kind: "assertion";
+	date: string;
+	account: AccountRef;
+	unverified: boolean;
+	amount: Amount;
+	comment: string | null;
+	span: Span;
+}
+
+type Target =
+	| { kind: "category"; ref: CategoryRef }
+	| { kind: "account"; ref: AccountRef; category: CategoryRef | null }
+	| { kind: "swap"; amount: Amount };
+
+interface AccountRef {
+	path: string[];
+	raw: string;
+	span: Span;
+}
+
+interface CategoryRef {
+	path: string[];
+	raw: string;
+	span: Span;
+}
+
+interface TagRef {
+	path: string[];
+	raw: string;
+	span: Span;
+}
+
+interface Amount {
+	sign: "+" | "-" | null;
+	value: number;
+	commodity: string;
+	span: Span;
+}
+
+interface Span {
+	start: { line: number; col: number };
+	end: { line: number; col: number };
+}
+```
+
+## 5. Helper Functions
+
+```typescript
+// Cursor operations
+function peek(p: Parser): string; // p.source[p.pos]
+function peekCode(p: Parser): number; // p.source.charCodeAt(p.pos)
+function advance(p: Parser): string; // consume one char
+function atEnd(p: Parser): boolean;
+
+// Whitespace
+function skipWhitespace(p: Parser): void;
+function skipWhitespaceAndComments(p: Parser): void;
+function skipLine(p: Parser): void;
+
+// Matchers
+function match(p: Parser, expected: string): boolean; // consume if match
+function expect(p: Parser, expected: string, errorCode: string): boolean;
+
+// Spans
+function markStart(p: Parser): { line: number; col: number };
+function spanFrom(p: Parser, start: { line: number; col: number }): Span;
+```
+
+## 6. Validation
+
+**During parsing (syntax):**
+- E001: Invalid character
+- E002: Malformed amount
+- E003: Invalid date
+- E004: Missing required component
+- E009: Invalid order
+
+**Post-parsing (semantic):**
+- E005: Unknown account
+- E006: Unknown category
+- E007: Unknown commodity
+- E008: Assertion mismatch
+- E010: Untracked transfer missing category
+
+**Warnings:**
+- W001: Non-chronological dates
+- W002: Category not in budget
+- W003: Unverified entry
+
+## 7. Public API
+
+```typescript
+interface ParseResult {
+	data: Ledger;
+	errors: Diagnostic[];
+	warnings: Diagnostic[];
+}
+
+interface Diagnostic {
+	code: string;
+	message: string;
+	severity: "error" | "warning";
+	span: Span;
+}
+
+function parse(source: string): ParseResult;
+```
+
+## 8. File Structure
 
 ```
 src/parser/
-├── lexer.ts          # Tokenizer - converts text to token stream
-├── tokens.ts         # Token type definitions
-├── parser.ts         # Recursive descent parser
-├── ast.ts            # AST node type definitions
-├── errors.ts         # Error types and messages
-└── index.ts          # Public API
+├── parser.ts       # Fused parser (main logic)
+├── models.ts       # Ledger, Transaction, etc.
+├── diagnostics.ts  # Error/warning definitions
+├── validate.ts     # Post-parse semantic checks
+└── index.ts        # Public API
 ```
 
-### 1.3 Token Types
-
-```typescript
-enum TokenType {
-  // Structural
-  SECTION_MARKER,   // >>>
-  NEWLINE,
-  INDENT,
-  EOF,
-  
-  // Literals
-  NUMBER,           // 123.45
-  DATE,             // 2026-01-15
-  YEAR_MONTH,       // 2026-01
-  IDENTIFIER,       // Checking, Groceries, USD
-  STRING,           // Quoted strings if needed
-  
-  // Entity prefixes (lexer emits these as compound tokens)
-  ACCOUNT,          // @Checking, @Assets:Bank:Checking
-  CATEGORY,         // &Groceries, &Expenses:Food
-  TAG,              // #traderjoes, #q1
-  CURRENCY_SYMBOL,  // $, €, RM
-  
-  // Operators
-  PLUS,             // +
-  MINUS,            // -
-  DOUBLE_EQUALS,    // ==
-  QUESTION,         // ?
-  COLON,            // :
-  EQUALS,           // =
-  COMMA,            // ,
-  
-  // Special
-  COMMENT,          // ; ...
-  ERROR,            // Invalid token
-}
-```
-
-### 1.4 AST Structure
-
-```typescript
-interface SourceLocation {
-  start: { line: number; column: number; offset: number };
-  end: { line: number; column: number; offset: number };
-}
-
-interface BaseNode {
-  type: string;
-  loc: SourceLocation;
-}
-
-// Top-level
-interface File extends BaseNode {
-  type: 'File';
-  sections: Section[];
-}
-
-interface Section extends BaseNode {
-  type: 'Section';
-  name: 'META' | 'START' | 'BUDGET' | 'LEDGER';
-  body: SectionBody;
-}
-
-// Section-specific bodies
-interface MetaBody { directives: MetaDirective[]; }
-interface StartBody { blocks: StartBlock[]; }
-interface BudgetBody { periods: BudgetPeriod[]; }
-interface LedgerBody { accountBlocks: AccountBlock[]; }
-
-// META directives
-type MetaDirective = 
-  | { type: 'Default'; commodity: string }
-  | { type: 'Commodity'; commodity: string }
-  | { type: 'Alias'; symbol: string; commodity: string }
-  | { type: 'Budget'; accounts: AccountRef[] }
-  | { type: 'NoBudget'; accounts: AccountRef[] };
-
-// START entries (declarative balances)
-interface StartBlock extends BaseNode {
-  type: 'StartBlock';
-  date: string;  // YYYY-MM-DD
-  entries: StartEntry[];
-}
-
-interface StartEntry extends BaseNode {
-  type: 'StartEntry';
-  account: AccountRef;
-  amounts: Amount[];  // multiple amounts per line for semantic grouping
-}
-
-// BUDGET entries
-interface BudgetPeriod extends BaseNode {
-  type: 'BudgetPeriod';
-  period: string;  // YYYY-MM
-  entries: BudgetEntry[];
-}
-
-interface BudgetEntry extends BaseNode {
-  type: 'BudgetEntry';
-  category: CategoryRef;
-  amount: Amount;
-}
-
-// LEDGER entries
-interface AccountBlock extends BaseNode {
-  type: 'AccountBlock';
-  account: AccountRef;
-  entries: LedgerEntry[];
-}
-
-type LedgerEntry = Transaction | Assertion;
-
-interface Transaction extends BaseNode {
-  type: 'Transaction';
-  date: string;
-  unverified: boolean;     // true if the ledger entry is prefixed with `?`
-  amount: Amount;
-  target: AccountRef | CategoryRef | Amount; // Amount target means an inline swap
-  category?: CategoryRef;  // optional, for budget tracking on transfers
-  tags: TagRef[];
-  comment?: string;
-}
-
-interface Assertion extends BaseNode {
-  type: 'Assertion';
-  date: string;
-  unverified: boolean;     // true if the ledger entry is prefixed with `?`
-  amount: Amount;
-  comment?: string;
-}
-
-// References (hierarchical names supported)
-interface AccountRef extends BaseNode {
-  type: 'AccountRef';
-  path: string[];  // ['Assets', 'Bank', 'Checking']
-  raw: string;     // '@Assets:Bank:Checking'
-}
-
-interface CategoryRef extends BaseNode {
-  type: 'CategoryRef';
-  path: string[];  // ['Expenses', 'Food', 'Groceries']
-  raw: string;     // '&Expenses:Food:Groceries'
-}
-
-interface TagRef extends BaseNode {
-  type: 'TagRef';
-  path: string[];  // ['vendor', 'traderjoes']
-  raw: string;     // '#vendor:traderjoes'
-}
-
-interface Amount extends BaseNode {
-  type: 'Amount';
-  sign: '+' | '-' | null;
-  value: number;
-  commodity: string;
-}
-```
-
-### 1.5 Parser Strategy
-
-1. **Lexer Phase:** Single-pass tokenization with lookahead
-2. **Parser Phase:** Recursive descent, section-aware
-3. **Validation Phase:** Semantic checks on AST
-
-**Canonical Transaction Parsing:**
-Transaction components must follow strict order: amount, target (account/category/amount), category (optional), tags (optional).
-
-```typescript
-// Public API
-function parse(source: string): ParseResult;
-
-interface ParseResult {
-  ast: File | null;
-  errors: ParseError[];
-  warnings: ParseWarning[];
-}
-```
-
-## 2. Domain Layer
-
-### 2.1 Core Data Structures
-
-```typescript
-interface BursaDocument {
-  // Raw parsed data
-  ast: File;
-  
-  // Resolved entities (indexed)
-  accounts: Map<string, Account>;
-  categories: Map<string, Category>;
-  commodities: Map<string, Commodity>;
-  
-  // Computed state
-  balances: Map<string, Map<string, Decimal>>; // account -> commodity -> balance
-  categoryStates: Map<string, CategoryState>;
-  
-  // Diagnostics
-  errors: Diagnostic[];
-  warnings: Diagnostic[];
-}
-
-interface Account {
-  name: string;
-  path: string[];           // ['Assets', 'Bank', 'Checking']
-  balances: Map<string, Decimal>;
-  transactions: Transaction[];
-  isBudgetTracked: boolean; // from META budget:/no-budget: directives
-}
-
-interface Category {
-  name: string;
-  path: string[];           // ['Expenses', 'Food', 'Groceries']
-}
-
-interface CategoryState {
-  category: string;
-  period: string;           // '2026-01'
-  allocated: Decimal;
-  spent: Decimal;
-  available: Decimal;       // allocated - spent + rollover
-}
-```
-
-### 2.2 Reactive Architecture (SolidJS)
-
-```typescript
-// Core store
-const [document, setDocument] = createStore<BursaDocument>({...});
-
-// Source text (editor content)
-const [source, setSource] = createSignal<string>('');
-
-// Derived computations (fine-grained reactivity)
-const parsed = createMemo(() => parse(source()));
-const accounts = createMemo(() => extractAccounts(parsed().ast));
-const balances = createMemo(() => computeBalances(parsed().ast, accounts()));
-const categoryStatus = createMemo(() => computeCategories(parsed().ast, accounts()));
-const diagnostics = createMemo(() => [...parsed().errors, ...validate(parsed().ast)]);
-```
-
-### 2.3 Intellisense Support
-
-The parser exposes hooks for editor integration:
-
-```typescript
-interface CompletionContext {
-  position: number;
-  triggerCharacter: '@' | '&' | '#' | null;
-  prefix: string;
-}
-
-interface CompletionItem {
-  label: string;
-  kind: 'account' | 'category' | 'tag' | 'commodity';
-  insertText: string;
-}
-
-function getCompletions(doc: BursaDocument, ctx: CompletionContext): CompletionItem[];
-function getHoverInfo(doc: BursaDocument, position: number): HoverInfo | null;
-function getDiagnosticsAtPosition(doc: BursaDocument, position: number): Diagnostic[];
-```
-
-### 2.4 Derived Computations (UI)
-
-The UI surfaces derived numbers (budget status, unallocated money, warnings) computed from the parsed AST. Comments remain free-form and are not required for correctness.
-
-**Budget-derived numbers:**
-- Remaining envelope/category money (per period) from `allocated - spent + rollover`
-- Unallocated / to-be-budgeted money (per period) from budget-tracked account balances minus total category availability
-
-```typescript
-interface BudgetSummary {
-  period: string; // YYYY-MM
-  commodity: string;
-  toBeBudgeted: Decimal;
-}
-
-function computeBudgetSummary(doc: BursaDocument): BudgetSummary[];
-```
-
-**Diagnostics beyond syntax:**
-In addition to parser errors, the domain layer can emit warnings/errors for potentially problematic entries, including:
-- Transfers involving `no-budget` accounts missing a `&Category`
-- Unverified entries (`?`) that need user confirmation
-
-## 3. UI Layer
-
-### 3.1 Component Structure
+## 9. Testing
 
 ```
-src/ui/
-├── App.tsx               # Root component
-├── Editor/
-│   ├── Editor.tsx        # CodeMirror/Monaco wrapper
-│   ├── completions.ts    # Intellisense provider
-│   └── diagnostics.ts    # Error highlighting
-├── Views/
-│   ├── Accounts.tsx      # Account list & balances
-│   ├── Transactions.tsx  # Transaction feed
-│   ├── Budget.tsx        # Budget dashboard
-│   └── Reports.tsx       # Charts & summaries
-├── Layout/
-│   └── Shell.tsx         # App shell, navigation
-└── common/
-    └── ...               # Shared components
+src/parser/
+├── parser.test.ts      # Valid/invalid parsing
+├── validate.test.ts    # Semantic validation
+└── diagnostics.test.ts # Error positions & messages
 ```
 
-### 3.2 Data Flow
-
-```
-User edits text
-       │
-       ▼
-  setSource(newText)
-       │
-       ▼
-  parse(source)  ──────► parsed (AST + errors)
-       │
-       ▼
-  ┌────┴────┐
-  │ Derived │
-  │ Signals │
-  └────┬────┘
-       │
-       ├──► accounts ──► <AccountList />
-       ├──► balances ──► <BalanceSheet />
-       ├──► categoryStatus ──► <BudgetView />
-       └──► diagnostics ──► <Editor /> (underlines)
-```
-
-## 4. File I/O
-
-### 4.1 Import/Export (SPA Mode)
-
-```typescript
-// Export
-function exportToFile(doc: BursaDocument): Blob;
-function downloadFile(blob: Blob, filename: string): void;
-
-// Import
-function handleFileUpload(file: File): Promise<string>;
-```
-
-### 4.2 Persistence Strategy
-
-1. **Phase 1 (Prototype):** Manual import/export via file picker
-2. **Phase 2:** localStorage for session persistence
-3. **Phase 3:** File System Access API (Chrome) for direct file editing
-4. **Phase 4:** Optional backend sync
-
-## 5. Testing Strategy
-
-### 5.1 Parser Tests (Priority)
-
-```
-src/parser/__tests__/
-├── lexer.test.ts         # Token generation
-├── parser.test.ts        # AST structure
-├── errors.test.ts        # Error recovery & messages
-└── snapshots/            # Golden file tests
-```
-
-Test categories:
-- **Valid input:** Correct AST structure
-- **Invalid input:** Appropriate error messages with locations
-- **Edge cases:** Empty sections, unicode, large files
-- **Fuzzing:** Property-based tests for robustness
-
-### 5.2 Domain Tests
-
-```
-src/domain/__tests__/
-├── balances.test.ts      # Balance computation
-├── budget.test.ts        # Budget logic
-└── validation.test.ts    # Semantic rules
-```
-
-### 5.3 Integration Tests
-
-```
-src/__tests__/
-├── integration.test.ts   # End-to-end parsing + computation
-└── fixtures/             # Real-world example files
-```
+Use `examples/example.bursa` as canonical fixture.
 
 ---
 
 ## Changelog
 
-| Version | Date       | Changes                                                       |
-| ------- | ---------- | ------------------------------------------------------------- |
-| 0.1.0   | 2026-01-01 | Initial architecture                                          |
-| 0.1.1   | 2026-01-01 | Add META directives, flexible tx, assertions                  |
-| 0.2.0   | 2026-01-02 | Simplified: +/- signs, canonical order, & categories, # tags  |
-| 0.2.1   | 2026-01-02 | Added `?` token and `unverified` marker support               |
-| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via amount targets |
-| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line (Amount[])    |
+| Version | Date       | Changes                                            |
+| ------- | ---------- | -------------------------------------------------- |
+| 0.4.0   | 2026-01-02 | Fused single-pass parser, no lexer/AST             |
+| 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat |
