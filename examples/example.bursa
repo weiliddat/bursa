@@ -18,6 +18,8 @@ untracked: @Brokerage
 2026-01
   &Groceries 500 $
   &Investing 1000 $
+  &Dining -50 $                   ; reallocate from Groceries
+  &Groceries -50 $
 
 >>> LEDGER
 ; === Opening Balances (2026-01-01) ===
@@ -42,6 +44,7 @@ untracked: @Brokerage
   ; Swapping cash for stock (no category needed, account is untracked)
   2026-01-21 -1000 $ +6.5 AAPL
   2026-01-22 -500 € +0.05 BTC                ; multi-currency swap: EUR for crypto
+  2026-02-15 -5 AAPL +800 $                  ; sell stock
 
 @Maybank
   ; Cross-currency transfer receiver (USD -> MYR)

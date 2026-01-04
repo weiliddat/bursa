@@ -120,8 +120,7 @@ section         = ">>>" SECTION_NAME NEWLINE block*
 ; META section
 meta_line       = "commodity:" COMMODITY
                 | "alias:" SYMBOL "=" COMMODITY
-                | "untracked:" account_pattern_list
-account_pattern_list = account_pattern ("," account_pattern)*
+                | "untracked:" account_pattern
 account_pattern = "@" IDENTIFIER (":" IDENTIFIER)* (":" "*")?
 
 ; BUDGET section
