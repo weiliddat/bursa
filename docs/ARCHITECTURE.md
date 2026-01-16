@@ -207,7 +207,6 @@ interface Span {
 ```typescript
 // Cursor operations
 function peek(p: Parser): string; // p.source[p.pos]
-function peekCode(p: Parser): number; // p.source.charCodeAt(p.pos)
 function advance(p: Parser): string; // consume one char
 function atEnd(p: Parser): boolean;
 
@@ -219,7 +218,6 @@ function skipBlankLines(p: Parser): void; // consume \n runs
 
 // Matchers
 function match(p: Parser, expected: string): boolean; // consume if match
-function expect(p: Parser, expected: string, errorCode: string): boolean;
 
 // Spans
 function markStart(p: Parser): { line: number; col: number };

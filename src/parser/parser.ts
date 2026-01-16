@@ -65,10 +65,6 @@ export function peek(p: Parser): string {
 	return p.source[p.pos] ?? "";
 }
 
-export function peekCode(p: Parser): number {
-	return p.source.charCodeAt(p.pos);
-}
-
 export function advance(p: Parser): string {
 	const ch = p.source[p.pos] ?? "";
 	if (ch === "\n") {
@@ -256,17 +252,12 @@ function parseMetaDirective(p: Parser): void {
 			skipLine(p);
 			return;
 		}
-		let pattern = "@";
-		if (peek(p) === "*") {
-			pattern += advance(p);
-		} else {
-			pattern += parseHierarchicalName(p);
-			if (peek(p) === ":") {
+		let pattern = `@${parseHierarchicalName(p)}`;
+		if (peek(p) === ":") {
+			advance(p);
+			if (peek(p) === "*") {
+				pattern += ":*";
 				advance(p);
-				if (peek(p) === "*") {
-					pattern += ":*";
-					advance(p);
-				}
 			}
 		}
 		p.data.meta.untrackedPatterns.push(pattern);
@@ -329,9 +320,7 @@ function parsePeriod(p: Parser): string | null {
 
 function parseCategoryRef(p: Parser): CategoryRef | null {
 	const start = markStart(p);
-	if (!match(p, "&")) {
-		return null;
-	}
+	advance(p); // consume '&'
 	const name = parseHierarchicalName(p);
 	if (!name) {
 		p.errors.push(
@@ -372,24 +361,22 @@ function parseAmount(p: Parser): Amount | null {
 
 	const numStart = markStart(p);
 	let numStr = "";
-	let seenDot = false;
 	while (!atEnd(p)) {
 		const c = peek(p);
-		if (/[0-9]/.test(c)) {
+		if (/[0-9.eE]/.test(c)) {
 			numStr += advance(p);
-		} else if (c === "." && !seenDot) {
-			seenDot = true;
+		} else if ((c === "+" || c === "-") && /[eE]$/.test(numStr)) {
 			numStr += advance(p);
 		} else {
 			break;
 		}
 	}
 
-	if (!numStr || numStr === ".") {
+	if (!numStr || !/[0-9]/.test(numStr)) {
 		return null;
 	}
 
-	const value = parseFloat(numStr);
+	const value = Number(numStr);
 	if (Number.isNaN(value)) {
 		p.errors.push(
 			invalidEntryError(spanFrom(p, numStart), `Malformed amount: '${numStr}'`),
@@ -487,9 +474,7 @@ function parseBudgetLine(p: Parser): void {
 
 function parseAccountRef(p: Parser): AccountRef | null {
 	const start = markStart(p);
-	if (!match(p, "@")) {
-		return null;
-	}
+	advance(p); // consume '@'
 	const name = parseHierarchicalName(p);
 	if (!name) {
 		p.errors.push(
@@ -606,9 +591,7 @@ function parseTarget(p: Parser): Target | null {
 
 function parseTagRef(p: Parser): TagRef | null {
 	const start = markStart(p);
-	if (!match(p, "#")) {
-		return null;
-	}
+	advance(p); // consume '#'
 	const name = parseHierarchicalName(p);
 	if (!name) {
 		p.errors.push(

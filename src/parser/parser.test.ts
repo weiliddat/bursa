@@ -498,6 +498,54 @@ describe("parse", () => {
 			);
 		});
 
+		it("InvalidEntryError for non-numeric amount", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  2026-01-01 abc USD &Cat
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected amount",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for malformed amount", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  2026-01-01 1.2.3 USD &Cat
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Malformed amount: '1.2.3'",
+				}),
+			);
+		});
+
+		it("parses scientific notation amounts", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+				>>> LEDGER
+				@Acc
+				  2026-01-01 1e6 USD &Cat
+				  2026-01-02 1.5E-3 USD &Cat
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			const entries = result.data.ledger.filter(
+				(e) => e.kind === "transaction",
+			);
+			expect(entries[0].amount.value).toBe(1e6);
+			expect(entries[1].amount.value).toBe(1.5e-3);
+		});
+
 		it("InvalidEntryError for expected tag name", () => {
 			const source = dedent`
 				>>> LEDGER
