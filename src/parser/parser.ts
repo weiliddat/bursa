@@ -138,23 +138,6 @@ export function match(p: Parser, expected: string): boolean {
 	return false;
 }
 
-export function expect(
-	p: Parser,
-	expected: string,
-	errorName: string,
-): boolean {
-	if (match(p, expected)) {
-		return true;
-	}
-	addError(p, {
-		name: errorName,
-		message: `Expected '${expected}'`,
-		severity: "error",
-		span: spanFrom(p, markStart(p)),
-	});
-	return false;
-}
-
 export function markStart(p: Parser): { line: number; col: number } {
 	return { line: p.line, col: p.col };
 }

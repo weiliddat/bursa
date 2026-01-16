@@ -272,4 +272,119 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.errors).toHaveLength(0);
 	});
+
+	it("warns on unverified entry", () => {
+		const source = `
+>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  ? 2026-01-01 +100 USD &Opening
+`;
+		const result = parseSource(source);
+		expect(result.warnings).toContainEqual(
+			expect.objectContaining({
+				name: "UnverifiedEntryWarning",
+				message: "Unverified entry needs user confirmation",
+			}),
+		);
+	});
+});
+
+describe("syntax errors", () => {
+	it("InvalidSectionError for unknown section", () => {
+		const source = `>>> UNKNOWN`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidSectionError",
+				message: "Unknown section 'UNKNOWN'",
+			}),
+		);
+	});
+
+	it("InvalidSectionError for content before section", () => {
+		const source = `some content
+>>> META
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidSectionError",
+				message: "Content before section marker",
+			}),
+		);
+	});
+
+	it("InvalidDirectiveError for missing colon", () => {
+		const source = `>>> META
+commodity USD
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidDirectiveError",
+				message: "Expected ':'",
+			}),
+		);
+	});
+
+	it("InvalidDirectiveError for unknown directive", () => {
+		const source = `>>> META
+unknown: value
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidDirectiveError",
+				message: "Unknown directive 'unknown'",
+			}),
+		);
+	});
+
+	it("InvalidEntryError for entry before account header", () => {
+		const source = `>>> LEDGER
+2026-01-01 -100 USD &Food
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+				message: "Entry before account header",
+			}),
+		);
+	});
+
+	it("InvalidEntryError for missing target", () => {
+		const source = `>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  2026-01-01 -100 USD
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+			}),
+		);
+	});
+
+	it("InvalidEntryError for invalid date format", () => {
+		const source = `>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  01-01-2026 -100 USD &Food
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+			}),
+		);
+	});
 });

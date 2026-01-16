@@ -5,12 +5,12 @@ import {
 	trunkEntityError,
 	unbudgetedCategoryWarning,
 	unknownEntityError,
+	unverifiedEntryWarning,
 } from "./diagnostics";
 import type { Parser } from "./parser";
 
 export function validate(p: Parser): void {
 	validateCommodities(p);
-	validateBudget(p);
 	validateLeafEntities(p);
 	validateLedger(p);
 }
@@ -57,10 +57,6 @@ function validateCommodities(p: Parser): void {
 			}
 		}
 	}
-}
-
-function validateBudget(_p: Parser): void {
-	
 }
 
 function collectTrunkEntities(paths: string[]): Set<string> {
@@ -212,6 +208,10 @@ function validateLedger(p: Parser): void {
 			p.warnings.push(nonChronologicalWarning(entry.span));
 		}
 		accountDates.set(accountName, entry.date);
+
+		if (entry.unverified) {
+			p.warnings.push(unverifiedEntryWarning(entry.span));
+		}
 
 		// Handle Assertion
 		if (entry.kind === "assertion") {

@@ -1,6 +1,6 @@
 # Bursa Roadmap
 
-> Last Updated: 2026-01-04
+> Last Updated: 2026-01-16
 
 ## Milestone 1: Parser & Validation
 
@@ -28,17 +28,33 @@ Build a fused single-pass parser that reads `.bursa` files and produces a `Ledge
 
 ### Phase 1.4: Semantic Validation
 
-- [ ] Reference validation (accounts, categories, commodities)
-- [ ] Budget validation (tracked/untracked rules)
-- [ ] Assertion validation (balance checks)
-- [ ] Structural validation (required fields, chronological dates)
+- [x] Commodity validation (unknown commodity references)
+- [x] Trunk entity validation (accounts/categories with children)
+- [x] Untracked account validation (missing category on transfer)
+- [x] Assertion validation (balance checks)
+- [x] Chronological date validation (per account block)
+- [x] Unbudgeted category validation
+- [x] Remove orphan code: `expect()` in parser.ts, `validateBudget()` stub
 
-### Phase 1.5: Test Coverage
+### Phase 1.5: Diagnostics Coverage
 
-- [x] Parse `examples/example.bursa` end-to-end
-- [ ] Unit tests for all validation rules (Vxxx per SPEC.md)
-- [ ] Unit tests for all error codes (Exxx per SPEC.md)
-- [ ] Unit tests for all warning codes (Wxxx per SPEC.md)
+Per SPEC.md §5, track implementation and test status for each diagnostic:
+
+**Syntax Errors:**
+- [x] `InvalidSectionError` — implemented & tested
+- [x] `InvalidDirectiveError` — implemented & tested
+- [x] `InvalidEntryError` — implemented & tested
+
+**Validation Errors:**
+- [x] `UnknownEntityError` — implemented & tested (commodity only)
+- [x] `TrunkEntityError` — implemented & tested
+- [x] `MissingCategoryError` — implemented & tested
+
+**Warnings:**
+- [x] `UnverifiedEntryWarning` — implemented & tested
+- [x] `AssertionFailedWarning` — implemented & tested
+- [x] `NonChronologicalWarning` — implemented & tested
+- [x] `UnbudgetedCategoryWarning` — implemented & tested
 
 ---
 

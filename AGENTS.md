@@ -16,19 +16,18 @@ Bursa is a minimalistic plain-text personal finance tool with implicit double-en
 
 ```bash
 # Development
-npm run dev          # Start Vite dev server
-npm run build        # TypeScript check + Vite build
-npm run preview      # Preview production build
+npm run dev           # Start Vite dev server
+npm run build         # TypeScript check + Vite build
+npm run preview       # Preview production build
 
 # Testing
-npm test             # Run Vitest in watch mode
-npm run test:run     # Run tests once
+npm test              # Run tests once
 npm run test:coverage # Run with coverage report
 
 # Code Quality
-npm run check        # TypeScript type checking (no emit)
-npm run lint         # Biome linting check
-npm run lint:fix     # Biome auto-fix
+npm run check         # TypeScript type checking (no emit)
+npm run lint          # Biome linting check
+npm run lint:fix      # Biome auto-fix
 ```
 
 ## Project Structure
@@ -79,9 +78,17 @@ bursa/
 - Update `docs/ROADMAP.md` when completing tasks
 - Update this file when adding new commands or conventions
 
+## Instructions
+
 **When making changes that affect the language or system design:**
 
 1. Read `docs/SPEC.md`, `docs/ARCHITECTURE.md`, and `examples/example.bursa` first
 2. Update all three files to maintain consistency
 3. Bump version numbers in changelogs when making substantive changes
 4. Update `docs/ROADMAP.md` for any progress or roadmap changes
+
+**When making file changes to code, examples, configuration**
+
+1. Re-run tests
+2. Re-run linters
+3. Update relevant docs if necessary
