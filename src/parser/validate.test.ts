@@ -10,9 +10,9 @@ describe("validation", () => {
 		const source = `
 >>> META
 commodity: USD
-
->>> LEDGER
-@Checking
+  
+>>> LEDGER  
+@Checking  
   2026-01-01 -100 EUR &Food
 `;
 		const result = parseSource(source);
@@ -24,14 +24,50 @@ commodity: USD
 		);
 	});
 
+	it("detects unknown commodity in budget", () => {
+		const source = `
+>>> META 
+commodity: USD 
+
+>>> BUDGET
+2026-01 
+  &Food 100 EUR 
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "UnknownEntityError",
+				message: "Unknown commodity: 'EUR'",
+			}),
+		);
+	});
+
+	it("detects unknown commodity in swap target", () => {
+		const source = `
+>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  2026-01-01 -1000 USD +10 UNKNOWN
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "UnknownEntityError",
+				message: "Unknown commodity: 'UNKNOWN'",
+			}),
+		);
+	});
+
 	it("warns when expense category is not in budget", () => {
 		const source = `
 >>> META
 commodity: USD
 
->>> BUDGET
-2026-01
-  &Food 100 USD
+>>> BUDGET 
+2026-01 
+  &Food 100 USD 
 
 >>> LEDGER
 @Checking
@@ -273,6 +309,57 @@ commodity: USD
 		expect(result.errors).toHaveLength(0);
 	});
 
+	it("detects trunk category on transfer target", () => {
+		const source = `
+>>> META
+commodity: USD
+untracked: @Brokerage
+
+>>> LEDGER
+@Checking
+  2026-01-01 -1000 USD @Brokerage &Invest
+  2026-01-02 -500 USD @Brokerage &Invest:Stocks
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "TrunkEntityError",
+				message:
+					"Cannot use category '&Invest' directly; it has sub-categories",
+			}),
+		);
+	});
+
+	it("matches untracked account with wildcard prefix", () => {
+		const source = `
+>>> META
+commodity: USD
+untracked: @Brokerage:*
+
+>>> LEDGER
+@Checking
+  2026-01-01 -1000 USD @Brokerage:Stocks &Investing
+`;
+		const result = parseSource(source);
+		// No error for missing category since @Brokerage:Stocks matches @Brokerage:*
+		expect(result.errors).toHaveLength(0);
+	});
+
+	it("matches exact prefix account with wildcard pattern", () => {
+		const source = `
+>>> META
+commodity: USD
+untracked: @Brokerage:*
+
+>>> LEDGER
+@Checking
+  2026-01-01 -1000 USD @Brokerage &Investing
+`;
+		const result = parseSource(source);
+		// @Brokerage exactly matches prefix of @Brokerage:*
+		expect(result.errors).toHaveLength(0);
+	});
+
 	it("warns on unverified entry", () => {
 		const source = `
 >>> META
@@ -293,6 +380,76 @@ commodity: USD
 });
 
 describe("syntax errors", () => {
+	it("flags invalid account names", () => {
+		const source = `>>> LEDGER
+@
+  2026-01-01 +100 USD &Food
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+				message: "Expected account name after '@'",
+			}),
+		);
+	});
+
+	it("handles hierarchical name with trailing colon", () => {
+		const source = `>>> LEDGER
+@Account:
+  2026-01-01 +100 USD &Food
+`;
+		const result = parseSource(source);
+		// Should parse @Account (stops at colon followed by non-identifier)
+		expect(result.errors.length).toBeGreaterThan(0);
+	});
+
+	it("InvalidDirectiveError for missing commodity name", () => {
+		const source = `>>> META
+commodity:
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidDirectiveError",
+				message: "Expected commodity name",
+			}),
+		);
+	});
+
+	it("InvalidEntryError for missing amount after date", () => {
+		const source = `>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  2026-01-01
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+				message: "Expected amount",
+			}),
+		);
+	});
+
+	it("InvalidEntryError for unexpected character in entry", () => {
+		const source = `>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  !invalid
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+			}),
+		);
+	});
+
 	it("InvalidSectionError for unknown section", () => {
 		const source = `>>> UNKNOWN`;
 		const result = parseSource(source);
@@ -386,5 +543,34 @@ commodity: USD
 				name: "InvalidEntryError",
 			}),
 		);
+	});
+
+	it("InvalidEntryError for invalid category target", () => {
+		const source = `>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  2026-02-01 -100 USD &
+`;
+		const result = parseSource(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "InvalidEntryError",
+				message: "Expected category name after '&'",
+			}),
+		);
+	});
+
+	it("Missing category for transfers is not a syntax error", () => {
+		const source = `>>> META
+commodity: USD
+
+>>> LEDGER
+@Checking
+  2026-02-01 -100 USD @Brokerage
+`;
+		const result = parseSource(source);
+		expect(result.errors).toHaveLength(0);
 	});
 });

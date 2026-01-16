@@ -159,10 +159,8 @@ function hasBudgetedAncestor(
 }
 
 function isUntracked(account: string, patterns: string[]): boolean {
-	// Simple wildcard matching for now: @Account vs @Account, or @Group:*
 	// account is like "@Brokerage:Stocks"
-	// pattern can be "@Brokerage" (exact?) or "@Brokerage:*" (wildcard)
-	// SPEC: "untracked: supports wildcards: @* or @Investments:*"
+	// pattern can be "@Brokerage" (exact) or "@Brokerage:*" (wildcard for children)
 
 	for (const pattern of patterns) {
 		if (pattern === account) return true;
@@ -172,7 +170,6 @@ function isUntracked(account: string, patterns: string[]): boolean {
 				return true;
 			}
 		}
-		if (pattern === "@*") return true;
 	}
 	return false;
 }

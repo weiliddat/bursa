@@ -41,7 +41,7 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 
 - All amounts require an explicit symbol or commodity
 - Aliases implicitly declare both the symbol and the commodity
-- `untracked:` supports wildcards: `@*` or `@Investments:*`
+- `untracked:` supports wildcards: `@Investments:*` matches all children
 
 ### 3.3 Entities
 

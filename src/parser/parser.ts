@@ -156,10 +156,6 @@ export function addError(p: Parser, diagnostic: Diagnostic): void {
 	p.errors.push(diagnostic);
 }
 
-export function addWarning(p: Parser, diagnostic: Diagnostic): void {
-	p.warnings.push(diagnostic);
-}
-
 function parseIdentifier(p: Parser): string {
 	let result = "";
 	while (!atEnd(p)) {
