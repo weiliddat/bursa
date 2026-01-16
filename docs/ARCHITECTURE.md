@@ -212,8 +212,7 @@ function atEnd(p: Parser): boolean;
 
 // Whitespace (line-aware)
 function skipHorizontalWhitespace(p: Parser): void; // spaces/tabs only (never consumes newline)
-function skipToEOL(p: Parser): void; // skip to newline (for comments)
-function skipLine(p: Parser): void; // skip past newline
+function skipLine(p: Parser): void; // skip to and past newline
 function skipBlankLines(p: Parser): void; // consume \n runs
 
 // Matchers
@@ -277,9 +276,8 @@ src/parser/
 
 ```
 src/parser/
-├── parser.test.ts      # Valid/invalid parsing
-├── validate.test.ts    # Semantic validation
-└── diagnostics.test.ts # Error positions & messages
+├── parser.test.ts      # Valid/invalid parsing (syntax tests)
+└── validate.test.ts    # Semantic validation
 ```
 
 Use `examples/example.bursa` as canonical fixture.

@@ -92,14 +92,10 @@ export function skipHorizontalWhitespace(p: Parser): void {
 	}
 }
 
-export function skipToEOL(p: Parser): void {
+export function skipLine(p: Parser): void {
 	while (!atEnd(p) && peek(p) !== "\n") {
 		advance(p);
 	}
-}
-
-export function skipLine(p: Parser): void {
-	skipToEOL(p);
 	if (peek(p) === "\n") {
 		advance(p);
 	}
