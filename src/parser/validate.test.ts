@@ -6,7 +6,7 @@ function parseSource(source: string) {
 }
 
 describe("validation", () => {
-	it("detects unknown commodity (E007)", () => {
+	it("detects unknown commodity", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -18,13 +18,13 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				code: "E007",
+				name: "UnknownEntityError",
 				message: "Unknown commodity: 'EUR'",
 			}),
 		);
 	});
 
-	it("warns when expense category is not in budget (W002)", () => {
+	it("warns when expense category is not in budget", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -40,13 +40,13 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
-				code: "W002",
+				name: "UnbudgetedCategoryWarning",
 				message: "Expense category not in budget: '&Unknown'",
 			}),
 		);
 	});
 
-	it("no warning when expense category exactly matches budget (W002)", () => {
+	it("no warning when expense category exactly matches budget", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -63,7 +63,7 @@ commodity: USD
 		expect(result.warnings).toHaveLength(0);
 	});
 
-	it("no warning when expense sub-category has budgeted ancestor (W002)", () => {
+	it("no warning when expense sub-category has budgeted ancestor", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -81,7 +81,7 @@ commodity: USD
 		expect(result.warnings).toHaveLength(0);
 	});
 
-	it("detects transfer to untracked account missing category (E010)", () => {
+	it("detects transfer to untracked account missing category", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -94,7 +94,7 @@ untracked: @Brokerage
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				code: "E010",
+				name: "MissingCategoryError",
 				message: "Transfer to untracked account missing category",
 			}),
 		);
@@ -118,7 +118,7 @@ untracked: @Brokerage
 		expect(result.errors).toHaveLength(0);
 	});
 
-	it("warns on non-chronological dates (W001)", () => {
+	it("warns on non-chronological dates", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -131,13 +131,13 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
-				code: "W001",
+				name: "NonChronologicalWarning",
 				message: "Non-chronological dates in account block",
 			}),
 		);
 	});
 
-	it("detects assertion failure (E008)", () => {
+	it("warns on assertion failure", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -148,9 +148,9 @@ commodity: USD
   2026-01-02 == 200 USD
 `;
 		const result = parseSource(source);
-		expect(result.errors).toContainEqual(
+		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
-				code: "E008",
+				name: "AssertionFailedWarning",
 				message: "Assertion failed: expected 200 USD, got 100 USD",
 			}),
 		);
@@ -170,7 +170,7 @@ commodity: USD
 		expect(result.errors).toHaveLength(0);
 	});
 
-	it("detects trunk account used as block header (E012)", () => {
+	it("detects trunk account used as block header", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -185,13 +185,13 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				code: "E012",
+				name: "TrunkEntityError",
 				message: "Cannot use account '@Bank' directly; it has sub-accounts",
 			}),
 		);
 	});
 
-	it("detects trunk account used as transfer target (E012)", () => {
+	it("detects trunk account used as transfer target", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -207,13 +207,13 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				code: "E012",
+				name: "TrunkEntityError",
 				message: "Cannot use account '@Bank' directly; it has sub-accounts",
 			}),
 		);
 	});
 
-	it("detects trunk category used in transaction (E012)", () => {
+	it("detects trunk category used in transaction", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -226,13 +226,13 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				code: "E012",
+				name: "TrunkEntityError",
 				message: "Cannot use category '&Food' directly; it has sub-categories",
 			}),
 		);
 	});
 
-	it("detects trunk category used in budget (E012)", () => {
+	it("detects trunk category used in budget", () => {
 		const source = `
 >>> META
 commodity: USD
@@ -245,7 +245,7 @@ commodity: USD
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				code: "E012",
+				name: "TrunkEntityError",
 				message: "Cannot use category '&Food' directly; it has sub-categories",
 			}),
 		);

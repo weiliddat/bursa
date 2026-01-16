@@ -65,7 +65,7 @@ function parse(source: string): ParseResult {
 			parseLedgerLine(p);
 		} else {
 			// Content before any section
-			addError(p, "E001", "Content before section marker");
+			addError(p, invalidSectionError(...));
 			skipLine(p);
 		}
 	}
@@ -245,8 +245,6 @@ Bursa uses native JavaScript `number` (IEEE 754 double-precision floats) for all
 
 See SPEC.md §5 for the canonical list of diagnostics.
 
-**Summary:** Syntax errors (E001–E004, E009, E011), semantic errors (E005, E007, E008, E010), warnings (W001–W003).
-
 ## 8. Public API
 
 ```typescript
@@ -257,7 +255,7 @@ interface ParseResult {
 }
 
 interface Diagnostic {
-	code: string;
+	name: string;
 	message: string;
 	severity: "error" | "warning";
 	span: Span;

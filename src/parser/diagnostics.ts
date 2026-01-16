@@ -1,162 +1,113 @@
 import type { Span } from "./models.ts";
 
 export interface Diagnostic {
-	code: string;
+	name: string;
 	message: string;
 	severity: "error" | "warning";
 	span: Span;
 }
 
 export function createDiagnostic(
-	code: string,
+	name: string,
 	message: string,
 	severity: "error" | "warning",
 	span: Span,
 ): Diagnostic {
-	return { code, message, severity, span };
+	return { name, message, severity, span };
 }
 
-// Error codes (E001-E011)
+// Syntax errors
 
-export function invalidToken(span: Span, char: string): Diagnostic {
-	return createDiagnostic(
-		"E001",
-		`Invalid token or unexpected character: '${char}'`,
-		"error",
-		span,
-	);
+export function invalidSectionError(span: Span, detail: string): Diagnostic {
+	return createDiagnostic("InvalidSectionError", detail, "error", span);
 }
 
-export function malformedAmount(span: Span, text: string): Diagnostic {
-	return createDiagnostic(
-		"E002",
-		`Malformed amount (bad number format): '${text}'`,
-		"error",
-		span,
-	);
+export function invalidDirectiveError(span: Span, detail: string): Diagnostic {
+	return createDiagnostic("InvalidDirectiveError", detail, "error", span);
 }
 
-export function invalidDateFormat(span: Span, text: string): Diagnostic {
-	return createDiagnostic(
-		"E003",
-		`Invalid date format: '${text}'`,
-		"error",
-		span,
-	);
+export function invalidEntryError(span: Span, detail: string): Diagnostic {
+	return createDiagnostic("InvalidEntryError", detail, "error", span);
 }
 
-export function missingRequiredComponent(
+// Validation errors
+
+export function unknownEntityError(
 	span: Span,
-	component: string,
+	entityType: "account" | "category" | "commodity",
+	name: string,
 ): Diagnostic {
 	return createDiagnostic(
-		"E004",
-		`Missing required transaction component: ${component}`,
+		"UnknownEntityError",
+		`Unknown ${entityType}: '${name}'`,
 		"error",
 		span,
 	);
 }
 
-export function unknownAccount(span: Span, account: string): Diagnostic {
-	return createDiagnostic(
-		"E005",
-		`Unknown account reference: '${account}'`,
-		"error",
-		span,
-	);
-}
-
-export function unknownCommodity(span: Span, commodity: string): Diagnostic {
-	return createDiagnostic(
-		"E007",
-		`Unknown commodity: '${commodity}'`,
-		"error",
-		span,
-	);
-}
-
-export function assertionFailed(
+export function trunkEntityError(
 	span: Span,
-	expected: string,
-	actual: string,
+	entityType: "account" | "category",
+	name: string,
 ): Diagnostic {
 	return createDiagnostic(
-		"E008",
-		`Assertion failed: expected ${expected}, got ${actual}`,
+		"TrunkEntityError",
+		`Cannot use ${entityType} '${name}' directly; it has sub-${entityType === "account" ? "accounts" : "categories"}`,
 		"error",
 		span,
 	);
 }
 
-export function invalidComponentOrder(
-	span: Span,
-	component: string,
-): Diagnostic {
+export function missingCategoryError(span: Span): Diagnostic {
 	return createDiagnostic(
-		"E009",
-		`Invalid component order in transaction: ${component}`,
-		"error",
-		span,
-	);
-}
-
-export function transferMissingCategory(span: Span): Diagnostic {
-	return createDiagnostic(
-		"E010",
+		"MissingCategoryError",
 		"Transfer to untracked account missing category",
 		"error",
 		span,
 	);
 }
 
-export function contentBeforeSectionMarker(span: Span): Diagnostic {
-	return createDiagnostic(
-		"E011",
-		"Content before section marker",
-		"error",
-		span,
-	);
-}
+// Warnings
 
-// Warning codes (W001-W003)
-
-export function nonChronologicalDates(span: Span): Diagnostic {
+export function unverifiedEntryWarning(span: Span): Diagnostic {
 	return createDiagnostic(
-		"W001",
-		"Non-chronological dates in account block",
-		"warning",
-		span,
-	);
-}
-
-export function expenseNotInBudget(span: Span, category: string): Diagnostic {
-	return createDiagnostic(
-		"W002",
-		`Expense category not in budget: '${category}'`,
-		"warning",
-		span,
-	);
-}
-
-export function unverifiedEntry(span: Span): Diagnostic {
-	return createDiagnostic(
-		"W003",
+		"UnverifiedEntryWarning",
 		"Unverified entry needs user confirmation",
 		"warning",
 		span,
 	);
 }
 
-export function trunkEntityReference(
+export function assertionFailedWarning(
 	span: Span,
-	entity: string,
-	entityType: "account" | "category",
+	expected: string,
+	actual: string,
 ): Diagnostic {
-	const plural = entityType === "category" ? "sub-categories" : "sub-accounts";
 	return createDiagnostic(
-		"E012",
-		`Cannot use ${entityType} '${entity}' directly; it has ${plural}`,
-		"error",
+		"AssertionFailedWarning",
+		`Assertion failed: expected ${expected}, got ${actual}`,
+		"warning",
+		span,
+	);
+}
+
+export function nonChronologicalWarning(span: Span): Diagnostic {
+	return createDiagnostic(
+		"NonChronologicalWarning",
+		"Non-chronological dates in account block",
+		"warning",
+		span,
+	);
+}
+
+export function unbudgetedCategoryWarning(
+	span: Span,
+	category: string,
+): Diagnostic {
+	return createDiagnostic(
+		"UnbudgetedCategoryWarning",
+		`Expense category not in budget: '${category}'`,
+		"warning",
 		span,
 	);
 }

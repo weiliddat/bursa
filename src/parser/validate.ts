@@ -1,10 +1,10 @@
 import {
-	assertionFailed,
-	expenseNotInBudget,
-	nonChronologicalDates,
-	transferMissingCategory,
-	trunkEntityReference,
-	unknownCommodity,
+	assertionFailedWarning,
+	missingCategoryError,
+	nonChronologicalWarning,
+	trunkEntityError,
+	unbudgetedCategoryWarning,
+	unknownEntityError,
 } from "./diagnostics";
 import type { Parser } from "./parser";
 
@@ -22,7 +22,11 @@ function validateCommodities(p: Parser): void {
 	for (const entry of p.data.budget) {
 		if (!defined.has(entry.amount.commodity)) {
 			p.errors.push(
-				unknownCommodity(entry.amount.span, entry.amount.commodity),
+				unknownEntityError(
+					entry.amount.span,
+					"commodity",
+					entry.amount.commodity,
+				),
 			);
 		}
 	}
@@ -31,7 +35,11 @@ function validateCommodities(p: Parser): void {
 	for (const entry of p.data.ledger) {
 		if (!defined.has(entry.amount.commodity)) {
 			p.errors.push(
-				unknownCommodity(entry.amount.span, entry.amount.commodity),
+				unknownEntityError(
+					entry.amount.span,
+					"commodity",
+					entry.amount.commodity,
+				),
 			);
 		}
 		if (entry.kind === "transaction") {
@@ -40,8 +48,9 @@ function validateCommodities(p: Parser): void {
 				!defined.has(entry.target.amount.commodity)
 			) {
 				p.errors.push(
-					unknownCommodity(
+					unknownEntityError(
 						entry.target.amount.span,
+						"commodity",
 						entry.target.amount.commodity,
 					),
 				);
@@ -51,8 +60,7 @@ function validateCommodities(p: Parser): void {
 }
 
 function validateBudget(_p: Parser): void {
-	// W002: Expense category not in budget
-	// This actually needs to be checked in validateLedger, but we need the budget categories first.
+	
 }
 
 function collectTrunkEntities(paths: string[]): Set<string> {
@@ -94,27 +102,27 @@ function validateLeafEntities(p: Parser): void {
 	for (const entry of p.data.ledger) {
 		if (trunkAccounts.has(entry.account.raw)) {
 			p.errors.push(
-				trunkEntityReference(entry.account.span, entry.account.raw, "account"),
+				trunkEntityError(entry.account.span, "account", entry.account.raw),
 			);
 		}
 		if (entry.kind === "transaction") {
 			if (entry.target.kind === "category") {
 				if (trunkCategories.has(entry.target.ref.raw)) {
 					p.errors.push(
-						trunkEntityReference(
+						trunkEntityError(
 							entry.target.ref.span,
-							entry.target.ref.raw,
 							"category",
+							entry.target.ref.raw,
 						),
 					);
 				}
 			} else if (entry.target.kind === "account") {
 				if (trunkAccounts.has(entry.target.ref.raw)) {
 					p.errors.push(
-						trunkEntityReference(
+						trunkEntityError(
 							entry.target.ref.span,
-							entry.target.ref.raw,
 							"account",
+							entry.target.ref.raw,
 						),
 					);
 				}
@@ -123,10 +131,10 @@ function validateLeafEntities(p: Parser): void {
 					trunkCategories.has(entry.target.category.raw)
 				) {
 					p.errors.push(
-						trunkEntityReference(
+						trunkEntityError(
 							entry.target.category.span,
-							entry.target.category.raw,
 							"category",
+							entry.target.category.raw,
 						),
 					);
 				}
@@ -137,13 +145,16 @@ function validateLeafEntities(p: Parser): void {
 	for (const be of p.data.budget) {
 		if (trunkCategories.has(be.category.raw)) {
 			p.errors.push(
-				trunkEntityReference(be.category.span, be.category.raw, "category"),
+				trunkEntityError(be.category.span, "category", be.category.raw),
 			);
 		}
 	}
 }
 
-function hasBudgetedAncestor(category: string, budgetSet: Set<string>): boolean {
+function hasBudgetedAncestor(
+	category: string,
+	budgetSet: Set<string>,
+): boolean {
 	const parts = category.split(":");
 	for (let i = parts.length; i > 0; i--) {
 		if (budgetSet.has(parts.slice(0, i).join(":"))) return true;
@@ -196,10 +207,9 @@ function validateLedger(p: Parser): void {
 	for (const entry of p.data.ledger) {
 		const accountName = entry.account.raw;
 
-		// W001: Non-chronological dates
 		const lastDate = accountDates.get(accountName);
 		if (lastDate && entry.date < lastDate) {
-			p.warnings.push(nonChronologicalDates(entry.span));
+			p.warnings.push(nonChronologicalWarning(entry.span));
 		}
 		accountDates.set(accountName, entry.date);
 
@@ -211,8 +221,8 @@ function validateLedger(p: Parser): void {
 			// Relaxed comparison for float equality?
 			const diff = Math.abs(current - entry.amount.value);
 			if (diff > 0.000001) {
-				p.errors.push(
-					assertionFailed(
+				p.warnings.push(
+					assertionFailedWarning(
 						entry.span,
 						`${entry.amount.value} ${entry.amount.commodity}`,
 						`${current} ${entry.amount.commodity}`,
@@ -232,23 +242,20 @@ function validateLedger(p: Parser): void {
 
 			// Check target
 			if (entry.target.kind === "category") {
-				// W002: Expense category not in budget
-				// Only check if it's an expense (amount < 0) or just usage?
-				// "Expense category not in budget" implies expenses.
-				// But budget can have income too.
-				// Let's warn if any referenced category is not in budget.
 				if (!hasBudgetedAncestor(entry.target.ref.raw, budgetCategories)) {
 					p.warnings.push(
-						expenseNotInBudget(entry.target.ref.span, entry.target.ref.raw),
+						unbudgetedCategoryWarning(
+							entry.target.ref.span,
+							entry.target.ref.raw,
+						),
 					);
 				}
 			} else if (entry.target.kind === "account") {
 				const targetAccount = entry.target.ref.raw;
 
-				// E010: Transfer to untracked account missing category
 				if (isUntracked(targetAccount, p.data.meta.untrackedPatterns)) {
 					if (!entry.target.category) {
-						p.errors.push(transferMissingCategory(entry.target.ref.span));
+						p.errors.push(missingCategoryError(entry.target.ref.span));
 					}
 				}
 
