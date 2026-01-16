@@ -361,5 +361,199 @@ describe("parse", () => {
 			const result = parse(source);
 			expect(result.errors).toHaveLength(0);
 		});
+
+		it("parses untracked patterns with wildcards", () => {
+			const source = dedent`
+				>>> META
+				untracked: @Brokerage:*
+			`;
+			const result = parse(source);
+			expect(result.data.meta.untrackedPatterns).toContain("@Brokerage:*");
+		});
+
+		it("InvalidDirectiveError for missing '=' in alias", () => {
+			const source = dedent`
+				>>> META
+				alias: $ USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidDirectiveError",
+					message: "Expected '='",
+				}),
+			);
+		});
+
+		it("InvalidDirectiveError for missing '@' in untracked", () => {
+			const source = dedent`
+				>>> META
+				untracked: Brokerage
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidDirectiveError",
+					message: "Expected '@'",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for budget entry before period", () => {
+			const source = dedent`
+				>>> BUDGET
+				&Groceries 100 USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Budget entry before period header",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for missing budget amount", () => {
+			const source = dedent`
+				>>> BUDGET
+				2026-01
+				&Groceries
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected amount",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for unexpected character in budget", () => {
+			const source = dedent`
+				>>> BUDGET
+				2026-01
+				!invalid
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Unexpected character: '!'",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for malformed period", () => {
+			const source = dedent`
+				>>> BUDGET
+				202a-01
+				2026.01
+				2026-0a
+			`;
+			const result = parse(source);
+			expect(result.errors.length).toBe(3);
+		});
+
+		it("InvalidEntryError for malformed date", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  202a-01-01 100 USD &Food
+				  2026.01-01 100 USD &Food
+				  2026-0a-01 100 USD &Food
+				  2026-01.01 100 USD &Food
+				  2026-01-0a 100 USD &Food
+			`;
+			const result = parse(source);
+			expect(result.errors.length).toBe(5);
+		});
+
+		it("InvalidEntryError for missing amount in assertion", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  2026-01-01 == ; comment
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected amount after '=='",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for missing commodity", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  2026-01-01 100 &Cat
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Missing commodity for amount: '100'",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for expected tag name", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  2026-01-01 100 USD &Cat #
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected tag name after '#'",
+				}),
+			);
+		});
+
+		it("InvalidSectionError for malformed section marker", () => {
+			const source = dedent`
+				> META
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidSectionError",
+					message: "Expected '>>>'",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for invalid category ref in budget", () => {
+			const source = dedent`
+				>>> BUDGET
+				2026-01
+				& 100 USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected category name after '&'",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for invalid target in ledger", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Acc
+				  2026-01-01 100 USD !invalid
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected target, got '!'",
+				}),
+			);
+		});
 	});
 });

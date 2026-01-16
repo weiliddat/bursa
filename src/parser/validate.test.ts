@@ -2,10 +2,6 @@ import dedent from "dedent";
 import { describe, expect, it } from "vitest";
 import { parse } from "./parser";
 
-function parseSource(source: string) {
-	return parse(source);
-}
-
 describe("validation", () => {
 	it("detects unknown commodity", () => {
 		const source = dedent`
@@ -16,7 +12,7 @@ describe("validation", () => {
 			@Checking  
 			  2026-01-01 -100 EUR &Food
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "UnknownEntityError",
@@ -34,7 +30,7 @@ describe("validation", () => {
 			2026-01 
 			  &Food 100 EUR 
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "UnknownEntityError",
@@ -52,7 +48,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -1000 USD +10 UNKNOWN
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "UnknownEntityError",
@@ -74,7 +70,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -10 USD &Unknown
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnbudgetedCategoryWarning",
@@ -96,7 +92,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -10 USD &Food
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.warnings).toHaveLength(0);
 	});
 
@@ -114,7 +110,7 @@ describe("validation", () => {
 			  2026-01-01 -10 USD &Food:Groceries
 			  2026-01-02 -5 USD &Food:Dining:Restaurants
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.warnings).toHaveLength(0);
 	});
 
@@ -128,7 +124,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "MissingCategoryError",
@@ -151,7 +147,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage &Investments
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toHaveLength(0);
 	});
 
@@ -165,7 +161,7 @@ describe("validation", () => {
 			  2026-01-02 -10 USD &Food
 			  2026-01-01 -10 USD &Food
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "NonChronologicalWarning",
@@ -184,7 +180,7 @@ describe("validation", () => {
 			  2026-01-01 +100 USD &Opening
 			  2026-01-02 == 200 USD
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "AssertionFailedWarning",
@@ -203,7 +199,7 @@ describe("validation", () => {
 			  2026-01-01 +100 USD &Opening
 			  ? 2026-01-02 == 200 USD
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toHaveLength(0);
 	});
 
@@ -219,7 +215,7 @@ describe("validation", () => {
 			@Bank:Savings
 			  2026-01-01 +200 USD &Opening
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "TrunkEntityError",
@@ -241,7 +237,7 @@ describe("validation", () => {
 			@Bank:Savings
 			  2026-01-01 +200 USD &Opening
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "TrunkEntityError",
@@ -260,7 +256,7 @@ describe("validation", () => {
 			  2026-01-01 -50 USD &Food
 			  2026-01-02 -20 USD &Food:Groceries
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "TrunkEntityError",
@@ -279,7 +275,7 @@ describe("validation", () => {
 			  &Food 500 USD
 			  &Food:Groceries 300 USD
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "TrunkEntityError",
@@ -306,7 +302,7 @@ describe("validation", () => {
 			@Bank:Savings
 			  2026-01-01 +500 USD &Opening
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toHaveLength(0);
 	});
 
@@ -321,7 +317,7 @@ describe("validation", () => {
 			  2026-01-01 -1000 USD @Brokerage &Invest
 			  2026-01-02 -500 USD @Brokerage &Invest:Stocks
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
 				name: "TrunkEntityError",
@@ -341,7 +337,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage:Stocks &Investing
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		// No error for missing category since @Brokerage:Stocks matches @Brokerage:*
 		expect(result.errors).toHaveLength(0);
 	});
@@ -356,7 +352,7 @@ describe("validation", () => {
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage &Investing
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		// @Brokerage exactly matches prefix of @Brokerage:*
 		expect(result.errors).toHaveLength(0);
 	});
@@ -370,7 +366,7 @@ describe("validation", () => {
 			@Checking
 			  ? 2026-01-01 +100 USD &Opening
 		`;
-		const result = parseSource(source);
+		const result = parse(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnverifiedEntryWarning",
@@ -379,5 +375,3 @@ describe("validation", () => {
 		);
 	});
 });
-
-

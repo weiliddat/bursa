@@ -58,8 +58,8 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 
 ### Phase 1.6 Cleanup
 
-- [ ] Move syntax tests to parser.test.ts
-- [ ] Cover syntax edge cases
+- [x] Move syntax tests to parser.test.ts
+- [x] Cover syntax edge cases
 
 ---
 
