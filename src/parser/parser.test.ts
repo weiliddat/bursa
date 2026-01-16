@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import dedent from "dedent";
+
 import { parse } from "./parser";
 
 describe("parse", () => {
@@ -149,6 +151,215 @@ describe("parse", () => {
 					expect(maybankOpening.amount.commodity).toBe("MYR");
 				}
 			});
+		});
+	});
+
+	describe("syntax errors", () => {
+		it("flags invalid account names", () => {
+			const source = dedent`
+				>>> LEDGER
+				@
+				  2026-01-01 +100 USD &Food
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected account name after '@'",
+				}),
+			);
+		});
+
+		it("handles hierarchical name with trailing colon", () => {
+			const source = dedent`
+				>>> LEDGER
+				@Account:
+				  2026-01-01 +100 USD &Food
+			`;
+			const result = parse(source);
+			// Should parse @Account (stops at colon followed by non-identifier)
+			expect(result.errors.length).toBeGreaterThan(0);
+		});
+
+		it("InvalidDirectiveError for missing commodity name", () => {
+			const source = dedent`
+				>>> META
+				commodity:
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidDirectiveError",
+					message: "Expected commodity name",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for missing amount after date", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected amount",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for unexpected character in entry", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Checking
+				  !invalid
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+				}),
+			);
+		});
+
+		it("InvalidSectionError for unknown section", () => {
+			const source = dedent`>>> UNKNOWN`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidSectionError",
+					message: "Unknown section 'UNKNOWN'",
+				}),
+			);
+		});
+
+		it("InvalidSectionError for content before section", () => {
+			const source = dedent`
+				some content
+				>>> META
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidSectionError",
+					message: "Content before section marker",
+				}),
+			);
+		});
+
+		it("InvalidDirectiveError for missing colon", () => {
+			const source = dedent`
+				>>> META
+				commodity USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidDirectiveError",
+					message: "Expected ':'",
+				}),
+			);
+		});
+
+		it("InvalidDirectiveError for unknown directive", () => {
+			const source = dedent`
+				>>> META
+				unknown: value
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidDirectiveError",
+					message: "Unknown directive 'unknown'",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for entry before account header", () => {
+			const source = dedent`
+				>>> LEDGER
+				2026-01-01 -100 USD &Food
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Entry before account header",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for missing target", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 -100 USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for invalid date format", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Checking
+				  01-01-2026 -100 USD &Food
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+				}),
+			);
+		});
+
+		it("InvalidEntryError for invalid category target", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Checking
+				  2026-02-01 -100 USD &
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
+					message: "Expected category name after '&'",
+				}),
+			);
+		});
+
+		it("Missing category for transfers is not a syntax error", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Checking
+				  2026-02-01 -100 USD @Brokerage
+			`;
+			const result = parse(source);
+			expect(result.errors).toHaveLength(0);
 		});
 	});
 });
