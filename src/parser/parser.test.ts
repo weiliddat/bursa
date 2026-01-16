@@ -50,10 +50,10 @@ describe("parse", () => {
 			});
 
 			it("parses negative budget entry", () => {
-				const dining = result.data.budget[2];
-				expect(dining.category.raw).toBe("&Dining");
-				expect(dining.amount.sign).toBe("-");
-				expect(dining.amount.value).toBe(50);
+				const groceriesReduction = result.data.budget[3];
+				expect(groceriesReduction.category.raw).toBe("&Groceries");
+				expect(groceriesReduction.amount.sign).toBe("-");
+				expect(groceriesReduction.amount.value).toBe(50);
 			});
 		});
 

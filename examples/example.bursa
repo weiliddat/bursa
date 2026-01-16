@@ -1,29 +1,25 @@
->>> META
-; Commodities (currencies and assets)
-commodity: USD
+>>> META ; configuration
+commodity: USD ; US Dollar
 commodity: EUR
 commodity: MYR
 commodity: AAPL
 commodity: BTC
 
-; Symbol aliases
-alias: $ = USD
+alias: $ = USD ; dollar sign
 alias: € = EUR
 alias: RM = MYR
 
-; Budget tracking (investments excluded from budget categories)
-untracked: @Brokerage
+untracked: @Brokerage ; exclude from budget tracking
 
->>> BUDGET
-2026-01
+>>> BUDGET ; monthly allocations
+2026-01 ; January
   &Groceries 500 $
   &Investing 1000 $
-  &Dining -50 $                   ; reallocate from Groceries
+  &Dining 50 $                    ; reallocate from Groceries
   &Groceries -50 $
 
->>> LEDGER
-; === Opening Balances (2026-01-01) ===
-@Checking
+>>> LEDGER ; transactions
+@Checking ; primary account
   2026-01-01 +5000 $ &Opening:Balance
 @Maybank
   2026-01-01 +1200 RM &Opening:Balance
