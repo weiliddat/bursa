@@ -152,10 +152,6 @@ export function spanFrom(
 	};
 }
 
-export function addError(p: Parser, diagnostic: Diagnostic): void {
-	p.errors.push(diagnostic);
-}
-
 function parseIdentifier(p: Parser): string {
 	let result = "";
 	while (!atEnd(p)) {
@@ -194,7 +190,7 @@ function parseHierarchicalName(p: Parser): string {
 function parseSectionMarker(p: Parser): void {
 	const start = markStart(p);
 	if (!match(p, ">>>")) {
-		addError(p, invalidSectionError(spanFrom(p, start), "Expected '>>>'"));
+		p.errors.push(invalidSectionError(spanFrom(p, start), "Expected '>>>'"));
 		skipLine(p);
 		return;
 	}
@@ -208,8 +204,7 @@ function parseSectionMarker(p: Parser): void {
 		p.currentPeriod = null;
 		p.currentAccount = null;
 	} else {
-		addError(
-			p,
+		p.errors.push(
 			invalidSectionError(spanFrom(p, nameStart), `Unknown section '${name}'`),
 		);
 	}
@@ -221,7 +216,7 @@ function parseMetaDirective(p: Parser): void {
 	const keyword = parseIdentifier(p);
 
 	if (!match(p, ":")) {
-		addError(p, invalidDirectiveError(spanFrom(p, start), "Expected ':'"));
+		p.errors.push(invalidDirectiveError(spanFrom(p, start), "Expected ':'"));
 		skipLine(p);
 		return;
 	}
@@ -233,8 +228,7 @@ function parseMetaDirective(p: Parser): void {
 		if (commodity) {
 			p.data.meta.commodities.add(commodity);
 		} else {
-			addError(
-				p,
+			p.errors.push(
 				invalidDirectiveError(spanFrom(p, start), "Expected commodity name"),
 			);
 		}
@@ -242,8 +236,7 @@ function parseMetaDirective(p: Parser): void {
 		const symbol = parseSymbol(p);
 		skipHorizontalWhitespace(p);
 		if (!match(p, "=")) {
-			addError(
-				p,
+			p.errors.push(
 				invalidDirectiveError(spanFrom(p, markStart(p)), "Expected '='"),
 			);
 			skipLine(p);
@@ -257,8 +250,7 @@ function parseMetaDirective(p: Parser): void {
 		}
 	} else if (keyword === "untracked") {
 		if (!match(p, "@")) {
-			addError(
-				p,
+			p.errors.push(
 				invalidDirectiveError(spanFrom(p, markStart(p)), "Expected '@'"),
 			);
 			skipLine(p);
@@ -279,8 +271,7 @@ function parseMetaDirective(p: Parser): void {
 		}
 		p.data.meta.untrackedPatterns.push(pattern);
 	} else {
-		addError(
-			p,
+		p.errors.push(
 			invalidDirectiveError(
 				spanFrom(p, start),
 				`Unknown directive '${keyword}'`,
@@ -300,8 +291,7 @@ function parsePeriod(p: Parser): string | null {
 		if (/[0-9]/.test(ch)) {
 			result += advance(p);
 		} else {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(
 					spanFrom(p, start),
 					`Invalid period: '${result + ch}'`,
@@ -312,8 +302,7 @@ function parsePeriod(p: Parser): string | null {
 	}
 
 	if (peek(p) !== "-") {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, start), `Invalid period: '${result}'`),
 		);
 		return null;
@@ -325,8 +314,7 @@ function parsePeriod(p: Parser): string | null {
 		if (/[0-9]/.test(ch)) {
 			result += advance(p);
 		} else {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(
 					spanFrom(p, start),
 					`Invalid period: '${result + ch}'`,
@@ -346,8 +334,7 @@ function parseCategoryRef(p: Parser): CategoryRef | null {
 	}
 	const name = parseHierarchicalName(p);
 	if (!name) {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, start), "Expected category name after '&'"),
 		);
 		return null;
@@ -404,8 +391,7 @@ function parseAmount(p: Parser): Amount | null {
 
 	const value = parseFloat(numStr);
 	if (Number.isNaN(value)) {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, numStart), `Malformed amount: '${numStr}'`),
 		);
 		return null;
@@ -423,8 +409,7 @@ function parseAmount(p: Parser): Amount | null {
 	}
 
 	if (!commodity) {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(
 				spanFrom(p, start),
 				`Missing commodity for amount: '${numStr}'`,
@@ -456,8 +441,7 @@ function parseBudgetLine(p: Parser): void {
 
 	if (ch === "&") {
 		if (!p.currentPeriod) {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(
 					spanFrom(p, start),
 					"Budget entry before period header",
@@ -477,8 +461,7 @@ function parseBudgetLine(p: Parser): void {
 
 		const amount = parseAmount(p);
 		if (!amount) {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(spanFrom(p, markStart(p)), "Expected amount"),
 			);
 			skipLine(p);
@@ -496,8 +479,7 @@ function parseBudgetLine(p: Parser): void {
 		return;
 	}
 
-	addError(
-		p,
+	p.errors.push(
 		invalidEntryError(spanFrom(p, start), `Unexpected character: '${ch}'`),
 	);
 	skipLine(p);
@@ -510,8 +492,7 @@ function parseAccountRef(p: Parser): AccountRef | null {
 	}
 	const name = parseHierarchicalName(p);
 	if (!name) {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, start), "Expected account name after '@'"),
 		);
 		return null;
@@ -532,8 +513,7 @@ function parseDate(p: Parser): string | null {
 		if (/[0-9]/.test(ch)) {
 			result += advance(p);
 		} else {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(spanFrom(p, start), `Invalid date: '${result + ch}'`),
 			);
 			return null;
@@ -541,8 +521,7 @@ function parseDate(p: Parser): string | null {
 	}
 
 	if (peek(p) !== "-") {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, start), `Invalid date: '${result}'`),
 		);
 		return null;
@@ -554,8 +533,7 @@ function parseDate(p: Parser): string | null {
 		if (/[0-9]/.test(ch)) {
 			result += advance(p);
 		} else {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(spanFrom(p, start), `Invalid date: '${result + ch}'`),
 			);
 			return null;
@@ -563,8 +541,7 @@ function parseDate(p: Parser): string | null {
 	}
 
 	if (peek(p) !== "-") {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, start), `Invalid date: '${result}'`),
 		);
 		return null;
@@ -576,8 +553,7 @@ function parseDate(p: Parser): string | null {
 		if (/[0-9]/.test(ch)) {
 			result += advance(p);
 		} else {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(spanFrom(p, start), `Invalid date: '${result + ch}'`),
 			);
 			return null;
@@ -635,8 +611,7 @@ function parseTagRef(p: Parser): TagRef | null {
 	}
 	const name = parseHierarchicalName(p);
 	if (!name) {
-		addError(
-			p,
+		p.errors.push(
 			invalidEntryError(spanFrom(p, start), "Expected tag name after '#'"),
 		);
 		return null;
@@ -677,8 +652,7 @@ function parseLedgerLine(p: Parser): void {
 
 	if (ch === "?" || /[0-9]/.test(ch)) {
 		if (!p.currentAccount) {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(spanFrom(p, start), "Entry before account header"),
 			);
 			skipLine(p);
@@ -707,8 +681,7 @@ function parseLedgerLine(p: Parser): void {
 
 			const amount = parseAmount(p);
 			if (!amount) {
-				addError(
-					p,
+				p.errors.push(
 					invalidEntryError(
 						spanFrom(p, markStart(p)),
 						"Expected amount after '=='",
@@ -737,8 +710,7 @@ function parseLedgerLine(p: Parser): void {
 
 		const amount = parseAmount(p);
 		if (!amount) {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(spanFrom(p, markStart(p)), "Expected amount"),
 			);
 			skipLine(p);
@@ -749,8 +721,7 @@ function parseLedgerLine(p: Parser): void {
 
 		const target = parseTarget(p);
 		if (!target) {
-			addError(
-				p,
+			p.errors.push(
 				invalidEntryError(
 					spanFrom(p, markStart(p)),
 					`Expected target, got '${peek(p)}'`,
@@ -790,8 +761,7 @@ function parseLedgerLine(p: Parser): void {
 		return;
 	}
 
-	addError(
-		p,
+	p.errors.push(
 		invalidEntryError(spanFrom(p, start), `Unexpected character: '${ch}'`),
 	);
 	skipLine(p);
@@ -820,8 +790,7 @@ export function parse(source: string): ParseResult {
 		} else {
 			const start = markStart(p);
 			skipLine(p);
-			addError(
-				p,
+			p.errors.push(
 				invalidSectionError(
 					spanFrom(p, start),
 					"Content before section marker",
