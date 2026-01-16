@@ -1,3 +1,4 @@
+import dedent from "dedent";
 import { describe, expect, it } from "vitest";
 import { parse } from "./parser";
 
@@ -7,14 +8,14 @@ function parseSource(source: string) {
 
 describe("validation", () => {
 	it("detects unknown commodity", () => {
-		const source = `
->>> META
-commodity: USD
-  
->>> LEDGER  
-@Checking  
-  2026-01-01 -100 EUR &Food
-`;
+		const source = dedent`
+			>>> META
+			commodity: USD
+			  
+			>>> LEDGER  
+			@Checking  
+			  2026-01-01 -100 EUR &Food
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -25,14 +26,14 @@ commodity: USD
 	});
 
 	it("detects unknown commodity in budget", () => {
-		const source = `
->>> META 
-commodity: USD 
+		const source = dedent`
+			>>> META 
+			commodity: USD 
 
->>> BUDGET
-2026-01 
-  &Food 100 EUR 
-`;
+			>>> BUDGET
+			2026-01 
+			  &Food 100 EUR 
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -43,14 +44,14 @@ commodity: USD
 	});
 
 	it("detects unknown commodity in swap target", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01 -1000 USD +10 UNKNOWN
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD +10 UNKNOWN
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -61,18 +62,18 @@ commodity: USD
 	});
 
 	it("warns when expense category is not in budget", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> BUDGET 
-2026-01 
-  &Food 100 USD 
+			>>> BUDGET 
+			2026-01 
+			  &Food 100 USD 
 
->>> LEDGER
-@Checking
-  2026-01-01 -10 USD &Unknown
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -10 USD &Unknown
+		`;
 		const result = parseSource(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
@@ -83,50 +84,50 @@ commodity: USD
 	});
 
 	it("no warning when expense category exactly matches budget", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> BUDGET
-2026-01
-  &Food 100 USD
+			>>> BUDGET
+			2026-01
+			  &Food 100 USD
 
->>> LEDGER
-@Checking
-  2026-01-01 -10 USD &Food
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -10 USD &Food
+		`;
 		const result = parseSource(source);
 		expect(result.warnings).toHaveLength(0);
 	});
 
 	it("no warning when expense sub-category has budgeted ancestor", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> BUDGET
-2026-01
-  &Food 100 USD
+			>>> BUDGET
+			2026-01
+			  &Food 100 USD
 
->>> LEDGER
-@Checking
-  2026-01-01 -10 USD &Food:Groceries
-  2026-01-02 -5 USD &Food:Dining:Restaurants
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -10 USD &Food:Groceries
+			  2026-01-02 -5 USD &Food:Dining:Restaurants
+		`;
 		const result = parseSource(source);
 		expect(result.warnings).toHaveLength(0);
 	});
 
 	it("detects transfer to untracked account missing category", () => {
-		const source = `
->>> META
-commodity: USD
-untracked: @Brokerage
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage
 
->>> LEDGER
-@Checking
-  2026-01-01 -1000 USD @Brokerage
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD @Brokerage
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -137,33 +138,33 @@ untracked: @Brokerage
 	});
 
 	it("allows transfer to untracked account with category", () => {
-		const source = `
->>> META
-commodity: USD
-untracked: @Brokerage
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage
 
->>> BUDGET
-2026-01
-  &Investments 1000 USD
+			>>> BUDGET
+			2026-01
+			  &Investments 1000 USD
 
->>> LEDGER
-@Checking
-  2026-01-01 -1000 USD @Brokerage &Investments
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD @Brokerage &Investments
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toHaveLength(0);
 	});
 
 	it("warns on non-chronological dates", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-02 -10 USD &Food
-  2026-01-01 -10 USD &Food
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-02 -10 USD &Food
+			  2026-01-01 -10 USD &Food
+		`;
 		const result = parseSource(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
@@ -174,15 +175,15 @@ commodity: USD
 	});
 
 	it("warns on assertion failure", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01 +100 USD &Opening
-  2026-01-02 == 200 USD
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +100 USD &Opening
+			  2026-01-02 == 200 USD
+		`;
 		const result = parseSource(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
@@ -193,31 +194,31 @@ commodity: USD
 	});
 
 	it("ignores unverified assertion failure", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01 +100 USD &Opening
-  ? 2026-01-02 == 200 USD
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +100 USD &Opening
+			  ? 2026-01-02 == 200 USD
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toHaveLength(0);
 	});
 
 	it("detects trunk account used as block header", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Bank
-  2026-01-01 +100 USD &Opening
+			>>> LEDGER
+			@Bank
+			  2026-01-01 +100 USD &Opening
 
-@Bank:Savings
-  2026-01-01 +200 USD &Opening
-`;
+			@Bank:Savings
+			  2026-01-01 +200 USD &Opening
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -228,18 +229,18 @@ commodity: USD
 	});
 
 	it("detects trunk account used as transfer target", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01 +1000 USD &Opening
-  2026-01-02 -100 USD @Bank
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +1000 USD &Opening
+			  2026-01-02 -100 USD @Bank
 
-@Bank:Savings
-  2026-01-01 +200 USD &Opening
-`;
+			@Bank:Savings
+			  2026-01-01 +200 USD &Opening
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -250,15 +251,15 @@ commodity: USD
 	});
 
 	it("detects trunk category used in transaction", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01 -50 USD &Food
-  2026-01-02 -20 USD &Food:Groceries
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -50 USD &Food
+			  2026-01-02 -20 USD &Food:Groceries
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -269,15 +270,15 @@ commodity: USD
 	});
 
 	it("detects trunk category used in budget", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> BUDGET
-2026-01
-  &Food 500 USD
-  &Food:Groceries 300 USD
-`;
+			>>> BUDGET
+			2026-01
+			  &Food 500 USD
+			  &Food:Groceries 300 USD
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -288,38 +289,38 @@ commodity: USD
 	});
 
 	it("allows leaf-only accounts and categories", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> BUDGET
-2026-01
-  &Food:Groceries 300 USD
-  &Food:DiningOut 200 USD
+			>>> BUDGET
+			2026-01
+			  &Food:Groceries 300 USD
+			  &Food:DiningOut 200 USD
 
->>> LEDGER
-@Bank:Checking
-  2026-01-01 +1000 USD &Opening
-  2026-01-02 -50 USD &Food:Groceries
+			>>> LEDGER
+			@Bank:Checking
+			  2026-01-01 +1000 USD &Opening
+			  2026-01-02 -50 USD &Food:Groceries
 
-@Bank:Savings
-  2026-01-01 +500 USD &Opening
-`;
+			@Bank:Savings
+			  2026-01-01 +500 USD &Opening
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toHaveLength(0);
 	});
 
 	it("detects trunk category on transfer target", () => {
-		const source = `
->>> META
-commodity: USD
-untracked: @Brokerage
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage
 
->>> LEDGER
-@Checking
-  2026-01-01 -1000 USD @Brokerage &Invest
-  2026-01-02 -500 USD @Brokerage &Invest:Stocks
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD @Brokerage &Invest
+			  2026-01-02 -500 USD @Brokerage &Invest:Stocks
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -331,44 +332,44 @@ untracked: @Brokerage
 	});
 
 	it("matches untracked account with wildcard prefix", () => {
-		const source = `
->>> META
-commodity: USD
-untracked: @Brokerage:*
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage:*
 
->>> LEDGER
-@Checking
-  2026-01-01 -1000 USD @Brokerage:Stocks &Investing
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD @Brokerage:Stocks &Investing
+		`;
 		const result = parseSource(source);
 		// No error for missing category since @Brokerage:Stocks matches @Brokerage:*
 		expect(result.errors).toHaveLength(0);
 	});
 
 	it("matches exact prefix account with wildcard pattern", () => {
-		const source = `
->>> META
-commodity: USD
-untracked: @Brokerage:*
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage:*
 
->>> LEDGER
-@Checking
-  2026-01-01 -1000 USD @Brokerage &Investing
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD @Brokerage &Investing
+		`;
 		const result = parseSource(source);
 		// @Brokerage exactly matches prefix of @Brokerage:*
 		expect(result.errors).toHaveLength(0);
 	});
 
 	it("warns on unverified entry", () => {
-		const source = `
->>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  ? 2026-01-01 +100 USD &Opening
-`;
+			>>> LEDGER
+			@Checking
+			  ? 2026-01-01 +100 USD &Opening
+		`;
 		const result = parseSource(source);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
@@ -381,10 +382,11 @@ commodity: USD
 
 describe("syntax errors", () => {
 	it("flags invalid account names", () => {
-		const source = `>>> LEDGER
-@
-  2026-01-01 +100 USD &Food
-`;
+		const source = dedent`
+			>>> LEDGER
+			@
+			  2026-01-01 +100 USD &Food
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -395,19 +397,21 @@ describe("syntax errors", () => {
 	});
 
 	it("handles hierarchical name with trailing colon", () => {
-		const source = `>>> LEDGER
-@Account:
-  2026-01-01 +100 USD &Food
-`;
+		const source = dedent`
+			>>> LEDGER
+			@Account:
+			  2026-01-01 +100 USD &Food
+		`;
 		const result = parseSource(source);
 		// Should parse @Account (stops at colon followed by non-identifier)
 		expect(result.errors.length).toBeGreaterThan(0);
 	});
 
 	it("InvalidDirectiveError for missing commodity name", () => {
-		const source = `>>> META
-commodity:
-`;
+		const source = dedent`
+			>>> META
+			commodity:
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -418,13 +422,14 @@ commodity:
 	});
 
 	it("InvalidEntryError for missing amount after date", () => {
-		const source = `>>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -435,13 +440,14 @@ commodity: USD
 	});
 
 	it("InvalidEntryError for unexpected character in entry", () => {
-		const source = `>>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  !invalid
-`;
+			>>> LEDGER
+			@Checking
+			  !invalid
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -451,7 +457,7 @@ commodity: USD
 	});
 
 	it("InvalidSectionError for unknown section", () => {
-		const source = `>>> UNKNOWN`;
+		const source = dedent`>>> UNKNOWN`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -462,9 +468,10 @@ commodity: USD
 	});
 
 	it("InvalidSectionError for content before section", () => {
-		const source = `some content
->>> META
-`;
+		const source = dedent`
+			some content
+			>>> META
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -475,9 +482,10 @@ commodity: USD
 	});
 
 	it("InvalidDirectiveError for missing colon", () => {
-		const source = `>>> META
-commodity USD
-`;
+		const source = dedent`
+			>>> META
+			commodity USD
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -488,9 +496,10 @@ commodity USD
 	});
 
 	it("InvalidDirectiveError for unknown directive", () => {
-		const source = `>>> META
-unknown: value
-`;
+		const source = dedent`
+			>>> META
+			unknown: value
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -501,9 +510,10 @@ unknown: value
 	});
 
 	it("InvalidEntryError for entry before account header", () => {
-		const source = `>>> LEDGER
-2026-01-01 -100 USD &Food
-`;
+		const source = dedent`
+			>>> LEDGER
+			2026-01-01 -100 USD &Food
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -514,13 +524,14 @@ unknown: value
 	});
 
 	it("InvalidEntryError for missing target", () => {
-		const source = `>>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-01-01 -100 USD
-`;
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -100 USD
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -530,13 +541,14 @@ commodity: USD
 	});
 
 	it("InvalidEntryError for invalid date format", () => {
-		const source = `>>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  01-01-2026 -100 USD &Food
-`;
+			>>> LEDGER
+			@Checking
+			  01-01-2026 -100 USD &Food
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -546,13 +558,14 @@ commodity: USD
 	});
 
 	it("InvalidEntryError for invalid category target", () => {
-		const source = `>>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-02-01 -100 USD &
-`;
+			>>> LEDGER
+			@Checking
+			  2026-02-01 -100 USD &
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
@@ -563,13 +576,14 @@ commodity: USD
 	});
 
 	it("Missing category for transfers is not a syntax error", () => {
-		const source = `>>> META
-commodity: USD
+		const source = dedent`
+			>>> META
+			commodity: USD
 
->>> LEDGER
-@Checking
-  2026-02-01 -100 USD @Brokerage
-`;
+			>>> LEDGER
+			@Checking
+			  2026-02-01 -100 USD @Brokerage
+		`;
 		const result = parseSource(source);
 		expect(result.errors).toHaveLength(0);
 	});

@@ -56,6 +56,11 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] `NonChronologicalWarning` — implemented & tested
 - [x] `UnbudgetedCategoryWarning` — implemented & tested
 
+### Phase 1.6 Cleanup
+
+- [ ] Move syntax tests to parser.test.ts
+- [ ] Cover syntax edge cases
+
 ---
 
 ## Future Milestones
