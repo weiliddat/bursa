@@ -54,6 +54,8 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 
 Hierarchical naming uses `:` as separator. Parent totals aggregate child values.
 
+**Trunk vs Leaf:** Entities with sub-entities (e.g., `@Bank` when `@Bank:Savings` exists) are "trunk" entities—used only for display/aggregation. Only "leaf" entities (no children) may be referenced in transactions or budget allocations.
+
 ### 3.4 Transactions
 
 **Sign semantics** within an `@Account` block:
@@ -170,6 +172,9 @@ comment         = ";" TEXT
 | **V030** | `==` assertions must match computed balance at that point                      |
 | **V040** | BUDGET entries require: category, amount                                       |
 | **V041** | Dates within an account block should be chronological (warning)                |
+| **V050** | Accounts and categories with sub-entities are "trunk" entities (display only)  |
+| **V051** | Transactions may only reference leaf accounts (no sub-accounts)                |
+| **V052** | Transactions and budgets may only reference leaf categories (no sub-categories)|
 
 ### 5.2 Error & Warning Codes
 
@@ -185,6 +190,7 @@ comment         = ";" TEXT
 | E009 | Syntax   | Invalid component order in transaction         |
 | E010 | Semantic | Transfer to untracked account missing category |
 | E011 | Syntax   | Content before section marker                  |
+| E012 | Semantic | Trunk entity used directly (has sub-entities)  |
 | W001 | Warning  | Non-chronological dates in account block       |
 | W002 | Warning  | Expense category not in budget                 |
 | W003 | Warning  | Unverified entry (`?`) needs user confirmation |

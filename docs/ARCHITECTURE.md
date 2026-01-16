@@ -226,13 +226,28 @@ function markStart(p: Parser): { line: number; col: number };
 function spanFrom(p: Parser, start: { line: number; col: number }): Span;
 ```
 
-## 6. Validation
+## 6. Numeric Precision
+
+Bursa uses native JavaScript `number` (IEEE 754 double-precision floats) for all monetary calculations.
+
+**Why this is acceptable:**
+
+- IEEE 754 doubles have ~15-17 significant decimal digits
+- Rounding error per operation: ~10⁻¹⁶ (relative)
+- To accumulate a 1-cent error requires ~10⁷-10¹⁰ transactions
+- A household with 2,000 transactions/year would need **5,000-50,000 years** to see a 1-cent discrepancy
+
+**Trade-off:** Native floats are ~100x faster than Decimal libraries and have zero dependencies. For Bursa's stated scope (personal/small-business finance), this is the right trade-off.
+
+**When to reconsider:** If Bursa were ever used for high-frequency trading, banking aggregation, or multi-decade continuous operation without restart—none of which are in scope.
+
+## 7. Validation
 
 See SPEC.md §5 for the canonical list of diagnostics.
 
 **Summary:** Syntax errors (E001–E004, E009, E011), semantic errors (E005, E007, E008, E010), warnings (W001–W003).
 
-## 7. Public API
+## 8. Public API
 
 ```typescript
 interface ParseResult {
@@ -251,7 +266,7 @@ interface Diagnostic {
 function parse(source: string): ParseResult;
 ```
 
-## 8. File Structure
+## 9. File Structure
 
 ```
 src/parser/
@@ -262,7 +277,7 @@ src/parser/
 └── index.ts        # Public API
 ```
 
-## 9. Testing
+## 10. Testing
 
 ```
 src/parser/

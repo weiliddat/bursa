@@ -146,3 +146,17 @@ export function unverifiedEntry(span: Span): Diagnostic {
 		span,
 	);
 }
+
+export function trunkEntityReference(
+	span: Span,
+	entity: string,
+	entityType: "account" | "category",
+): Diagnostic {
+	const plural = entityType === "category" ? "sub-categories" : "sub-accounts";
+	return createDiagnostic(
+		"E012",
+		`Cannot use ${entityType} '${entity}' directly; it has ${plural}`,
+		"error",
+		span,
+	);
+}

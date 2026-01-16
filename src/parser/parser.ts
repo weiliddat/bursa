@@ -15,6 +15,7 @@ import type {
 	TagRef,
 	Target,
 } from "./models";
+import { validate } from "./validate";
 
 export interface Parser {
 	source: string;
@@ -792,6 +793,8 @@ export function parse(source: string): ParseResult {
 			addError(p, contentBeforeSectionMarker(spanFrom(p, start)));
 		}
 	}
+
+	validate(p);
 
 	return { data: p.data, errors: p.errors, warnings: p.warnings };
 }
