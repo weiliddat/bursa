@@ -151,49 +151,20 @@ tag             = "#" IDENTIFIER (":" IDENTIFIER)*
 comment         = ";" TEXT
 ```
 
-## 5. Diagnostics & Validation
+## 5. Diagnostics
 
-### 5.1 Validation Rules
-
-| Rule     | Description                                                                    |
-| -------- | ------------------------------------------------------------------------------ |
-| **V001** | Every transaction requires: amount, then a target                              |
-| **V002** | Commodity must be declared in META (via `commodity:` or `alias:`)              |
-| **V003** | Amount must be a valid number                                                  |
-| **V004** | Date must be valid (YYYY-MM-DD format)                                         |
-| **V005** | Components must follow canonical order: amount, target, tags                   |
-| **V006** | Category suffix on target is only valid when target is an untracked `@Account` |
-| **V010** | Referenced accounts must exist (declared via block or transfer target)         |
-| **V011** | Referenced categories should exist in BUDGET (warning if not)                  |
-| **V012** | Referenced commodities must be declared in META                                |
-| **V020** | Category names form a single namespace across BUDGET and LEDGER                |
-| **V021** | Transfers FROM tracked TO untracked accounts require a category                |
-| **V022** | Unallocated budget should not be negative per period (warning)                 |
-| **V030** | `==` assertions must match computed balance at that point                      |
-| **V040** | BUDGET entries require: category, amount                                       |
-| **V041** | Dates within an account block should be chronological (warning)                |
-| **V050** | Accounts and categories with sub-entities are "trunk" entities (display only)  |
-| **V051** | Transactions may only reference leaf accounts (no sub-accounts)                |
-| **V052** | Transactions and budgets may only reference leaf categories (no sub-categories)|
-
-### 5.2 Error & Warning Codes
-
-| Code | Category | Description                                    |
-| ---- | -------- | ---------------------------------------------- |
-| E001 | Syntax   | Invalid token or unexpected character          |
-| E002 | Syntax   | Malformed amount (bad number format)           |
-| E003 | Syntax   | Invalid date format                            |
-| E004 | Syntax   | Missing required transaction component         |
-| E005 | Semantic | Unknown account reference                      |
-| E007 | Semantic | Unknown commodity                              |
-| E008 | Semantic | Assertion failed (balance mismatch)            |
-| E009 | Syntax   | Invalid component order in transaction         |
-| E010 | Semantic | Transfer to untracked account missing category |
-| E011 | Syntax   | Content before section marker                  |
-| E012 | Semantic | Trunk entity used directly (has sub-entities)  |
-| W001 | Warning  | Non-chronological dates in account block       |
-| W002 | Warning  | Expense category not in budget                 |
-| W003 | Warning  | Unverified entry (`?`) needs user confirmation |
+| Error                       | Category   | Description                                         |
+| --------------------------- | ---------- | --------------------------------------------------- |
+| `InvalidSectionError`       | Syntax     | Unknown section marker or content before section    |
+| `InvalidDirectiveError`     | Syntax     | Malformed META directive                            |
+| `InvalidEntryError`         | Syntax     | Invalid date, malformed amount, missing target, etc |
+| `UnknownEntityError`        | Validation | Unknown account, category, or commodity reference   |
+| `TrunkEntityError`          | Validation | Account/category group is used as target            |
+| `MissingCategoryError`      | Validation | Transfer to untracked account missing category      |
+| `UnverifiedEntryWarning`    | Warning    | Entry marked `?` needs user confirmation            |
+| `AssertionFailedWarning`    | Warning    | Balance assertion does not match computed balance   |
+| `NonChronologicalWarning`   | Warning    | Dates within account block are out of order         |
+| `UnbudgetedCategoryWarning` | Warning    | Expense category not allocated in BUDGET            |
 
 ---
 
@@ -244,16 +215,16 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 
 ## Changelog
 
-| Version | Date       | Changes                                                                                        |
-| ------- | ---------- | ---------------------------------------------------------------------------------------------- |
-| 0.1.0   | 2026-01-01 | Initial specification                                                                          |
-| 0.2.0   | 2026-01-02 | Simplified syntax: +/- signs only, canonical order, & for categories, # for tags               |
-| 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                                                              |
-| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount                                   |
-| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line                                                |
-| 0.2.4   | 2026-01-02 | Unified `target` primitive                                                                     |
-| 0.2.5   | 2026-01-02 | Renamed to tracked/untracked; removed budget: directive; added wildcard support                |
-| 0.2.6   | 2026-01-02 | Removed default: directive; amounts require explicit commodity                                 |
-| 0.2.7   | 2026-01-03 | Indentation optional; dispatch uses first non-whitespace char                                  |
-| 0.3.0   | 2026-01-03 | Removed START section; opening balances via `&Opening:Balance`                                 |
+| Version | Date       | Changes                                                                                       |
+| ------- | ---------- | --------------------------------------------------------------------------------------------- |
+| 0.1.0   | 2026-01-01 | Initial specification                                                                         |
+| 0.2.0   | 2026-01-02 | Simplified syntax: +/- signs only, canonical order, & for categories, # for tags              |
+| 0.2.1   | 2026-01-02 | Added `?` unverified entry marker                                                             |
+| 0.2.2   | 2026-01-02 | Make `?` a line prefix; allow inline swaps via second amount                                  |
+| 0.2.3   | 2026-01-02 | START entries support multiple amounts per line                                               |
+| 0.2.4   | 2026-01-02 | Unified `target` primitive                                                                    |
+| 0.2.5   | 2026-01-02 | Renamed to tracked/untracked; removed budget: directive; added wildcard support               |
+| 0.2.6   | 2026-01-02 | Removed default: directive; amounts require explicit commodity                                |
+| 0.2.7   | 2026-01-03 | Indentation optional; dispatch uses first non-whitespace char                                 |
+| 0.3.0   | 2026-01-03 | Removed START section; opening balances via `&Opening:Balance`                                |
 | 0.4.0   | 2026-01-03 | Simplified spec: consolidated diagnostics, moved advanced patterns to appendix, reduced prose |
