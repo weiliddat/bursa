@@ -34,6 +34,17 @@ describe("parse", () => {
 			it("parses untracked patterns", () => {
 				expect(result.data.meta.untrackedPatterns).toContain("@Brokerage");
 			});
+
+			it("builds symbols sorted by length descending", () => {
+				const { symbols } = result.data.meta;
+				expect(symbols.length).toBeGreaterThan(0);
+				expect(symbols).toContain("$");
+				expect(symbols).toContain("USD");
+				expect(symbols).toContain("RM");
+				for (let i = 1; i < symbols.length; i++) {
+					expect(symbols[i - 1].length).toBeGreaterThanOrEqual(symbols[i].length);
+				}
+			});
 		});
 
 		describe("BUDGET section", () => {

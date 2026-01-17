@@ -40,10 +40,17 @@ export function createLedger(): Ledger {
 			commodities: new Set<string>(),
 			aliases: new Map<string, string>(),
 			untrackedPatterns: [],
+			symbols: [],
 		},
 		budget: [],
 		ledger: [],
 	};
+}
+
+function buildSymbols(p: Parser): void {
+	const { commodities, aliases } = p.data.meta;
+	const set = new Set([...commodities, ...aliases.keys()]);
+	p.data.meta.symbols = [...set].sort((a, b) => b.length - a.length);
 }
 
 export function createParser(source: string): Parser {
@@ -170,12 +177,7 @@ function parseAliasKey(p: Parser): string {
 }
 
 function matchSymbol(p: Parser): string | null {
-	const aliases = Array.from(p.data.meta.aliases.keys());
-	const commodities = Array.from(p.data.meta.commodities);
-	const symbols = [...aliases, ...commodities].sort(
-		(a, b) => b.length - a.length,
-	);
-	for (const symbol of symbols) {
+	for (const symbol of p.data.meta.symbols) {
 		if (p.source.startsWith(symbol, p.pos)) {
 			for (let i = 0; i < symbol.length; i++) {
 				advance(p);
@@ -213,6 +215,10 @@ function parseSectionMarker(p: Parser): void {
 	const name = parseIdentifier(p);
 
 	if (name === "META" || name === "BUDGET" || name === "LEDGER") {
+		// Build symbols from aliases and commodities after META is parsed
+		if (p.section === "META" && name !== "META") {
+			buildSymbols(p);
+		}
 		p.section = name;
 		p.currentPeriod = null;
 		p.currentAccount = null;

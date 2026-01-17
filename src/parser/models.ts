@@ -69,6 +69,7 @@ export interface Ledger {
 		commodities: Set<string>;
 		aliases: Map<string, string>;
 		untrackedPatterns: string[];
+		symbols: string[];
 	};
 	budget: BudgetEntry[];
 	ledger: LedgerEntry[];

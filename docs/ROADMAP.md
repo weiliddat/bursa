@@ -60,6 +60,31 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 
 - [x] Move syntax tests to parser.test.ts
 - [x] Cover syntax edge cases
+- [x] Commodity aliases
+- [x] Cache sorted symbols for `matchSymbol()` in `p.data.meta.symbols`
+- [ ] Combine commodity and alias directives, can define $ = USD, RM = MYR in one go
+- [ ] Review and benchmark parser performance
+
+### Phase 1.7 Performance Optimizations (TODO)
+
+**Parser string concatenation (O(n²) potential):**
+- [ ] Replace `result += advance(p)` loops with slice-based extraction
+- Affected functions: `parseIdentifier`, `parseAliasKey`, `parseComment`, `parseHierarchicalName`
+- Pattern: `const start = p.pos; while (...) advance(p); return p.source.slice(start, p.pos);`
+- Note: Must preserve correct `p.pos/line/col` tracking
+
+**Validation trunk/ancestor computations (O(k²) per path):**
+- [ ] Rewrite `collectTrunkEntities()` to build prefixes incrementally
+  - Current: `parts.slice(0,i).join(":")` in a loop
+  - Fix: `let prefix = parts[0]; for i=1..len-1 { trunks.add(prefix); prefix += ":" + parts[i]; }`
+- [ ] Memoize or precompute `hasBudgetedAncestor()` results
+  - Current: does `split`, then `slice().join()` for each ancestor level per call
+  - Options: (a) memoize by category string, (b) precompute "budget prefix set" and do single prefix-walk per unique category
+
+**Validation `isUntracked()` preprocessing:**
+- [ ] Preprocess `untrackedPatterns` into exact-match Set + wildcard prefix list
+  - Current: re-walks raw patterns for every transaction
+  - Fix: separate exact patterns into `Set`, wildcard patterns (`:*`) into prefix list; check becomes O(1) + O(P_wildcard)
 
 ---
 
