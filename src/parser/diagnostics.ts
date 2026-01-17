@@ -7,27 +7,33 @@ export interface Diagnostic {
 	span: Span;
 }
 
-export function createDiagnostic(
-	name: string,
-	message: string,
-	severity: "error" | "warning",
-	span: Span,
-): Diagnostic {
-	return { name, message, severity, span };
-}
-
 // Syntax errors
 
 export function invalidSectionError(span: Span, detail: string): Diagnostic {
-	return createDiagnostic("InvalidSectionError", detail, "error", span);
+	return {
+		name: "InvalidSectionError",
+		message: detail,
+		severity: "error",
+		span,
+	};
 }
 
 export function invalidDirectiveError(span: Span, detail: string): Diagnostic {
-	return createDiagnostic("InvalidDirectiveError", detail, "error", span);
+	return {
+		name: "InvalidDirectiveError",
+		message: detail,
+		severity: "error",
+		span,
+	};
 }
 
 export function invalidEntryError(span: Span, detail: string): Diagnostic {
-	return createDiagnostic("InvalidEntryError", detail, "error", span);
+	return {
+		name: "InvalidEntryError",
+		message: detail,
+		severity: "error",
+		span,
+	};
 }
 
 // Validation errors
@@ -37,12 +43,12 @@ export function unknownEntityError(
 	entityType: "account" | "category" | "commodity",
 	name: string,
 ): Diagnostic {
-	return createDiagnostic(
-		"UnknownEntityError",
-		`Unknown ${entityType}: '${name}'`,
-		"error",
+	return {
+		name: "UnknownEntityError",
+		message: `Unknown ${entityType}: '${name}'`,
+		severity: "error",
 		span,
-	);
+	};
 }
 
 export function trunkEntityError(
@@ -50,32 +56,32 @@ export function trunkEntityError(
 	entityType: "account" | "category",
 	name: string,
 ): Diagnostic {
-	return createDiagnostic(
-		"TrunkEntityError",
-		`Cannot use ${entityType} '${name}' directly; it has sub-${entityType === "account" ? "accounts" : "categories"}`,
-		"error",
+	return {
+		name: "TrunkEntityError",
+		message: `Cannot use ${entityType} '${name}' directly; it has sub-${entityType === "account" ? "accounts" : "categories"}`,
+		severity: "error",
 		span,
-	);
+	};
 }
 
 export function missingCategoryError(span: Span): Diagnostic {
-	return createDiagnostic(
-		"MissingCategoryError",
-		"Transfer to untracked account missing category",
-		"error",
+	return {
+		name: "MissingCategoryError",
+		message: "Transfer to untracked account missing category",
+		severity: "error",
 		span,
-	);
+	};
 }
 
 // Warnings
 
 export function unverifiedEntryWarning(span: Span): Diagnostic {
-	return createDiagnostic(
-		"UnverifiedEntryWarning",
-		"Unverified entry needs user confirmation",
-		"warning",
+	return {
+		name: "UnverifiedEntryWarning",
+		message: "Unverified entry needs user confirmation",
+		severity: "warning",
 		span,
-	);
+	};
 }
 
 export function assertionFailedWarning(
@@ -83,31 +89,31 @@ export function assertionFailedWarning(
 	expected: string,
 	actual: string,
 ): Diagnostic {
-	return createDiagnostic(
-		"AssertionFailedWarning",
-		`Assertion failed: expected ${expected}, got ${actual}`,
-		"warning",
+	return {
+		name: "AssertionFailedWarning",
+		message: `Assertion failed: expected ${expected}, got ${actual}`,
+		severity: "warning",
 		span,
-	);
+	};
 }
 
 export function nonChronologicalWarning(span: Span): Diagnostic {
-	return createDiagnostic(
-		"NonChronologicalWarning",
-		"Non-chronological dates in account block",
-		"warning",
+	return {
+		name: "NonChronologicalWarning",
+		message: "Non-chronological dates in account block",
+		severity: "warning",
 		span,
-	);
+	};
 }
 
 export function unbudgetedCategoryWarning(
 	span: Span,
 	category: string,
 ): Diagnostic {
-	return createDiagnostic(
-		"UnbudgetedCategoryWarning",
-		`Expense category not in budget: '${category}'`,
-		"warning",
+	return {
+		name: "UnbudgetedCategoryWarning",
+		message: `Expense category not in budget: '${category}'`,
+		severity: "warning",
 		span,
-	);
+	};
 }
