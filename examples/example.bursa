@@ -22,7 +22,7 @@ untracked: @Brokerage ; exclude from budget tracking
 @Checking ; primary account
   2026-01-01 +5000 $ &Opening:Balance
 @Maybank
-  2026-01-01 +1200 RM &Opening:Balance
+  2026-01-01 +RM1200 &Opening:Balance
 @Brokerage
   2026-01-01 +1000 $ &Opening:Balance
   2026-01-01 +500 € &Opening:Balance

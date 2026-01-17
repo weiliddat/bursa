@@ -1,7 +1,7 @@
 # Bursa Language Specification
 
-> Version: 0.4.0 (Draft)
-> Last Updated: 2026-01-03
+> Version: 0.5.0 (Draft)
+> Last Updated: 2026-01-17
 
 ## 1. Core Philosophy
 
@@ -23,24 +23,25 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 
 ### 3.1 General Syntax
 
-| Feature            | Rule                                                              |
-| ------------------ | ----------------------------------------------------------------- |
-| **Comments**       | Any text following `;` is ignored                                 |
-| **Indentation**    | Optional; leading spaces/tabs are ignored                         |
-| **Aliases**        | Symbols mapped to ISO codes in META (e.g., `$` → `USD`)           |
-| **Number Format**  | Currency symbols before OR after number (e.g., `$500` or `500 $`) |
-| **Sign Placement** | Sign at very start (e.g., `-$500`, `-500 $`, `+RM50`)             |
+| Feature            | Rule                                                                     |
+| ------------------ | ------------------------------------------------------------------------ |
+| **Comments**       | Any text following `;` is ignored                                        |
+| **Indentation**    | Optional; leading spaces/tabs are ignored                                |
+| **Aliases**        | Any string mapped to commodity in META (e.g., `$` → `USD`, `RM` → `MYR`) |
+| **Number Format**  | Currency symbols before OR after number (e.g., `$500` or `500 $`)        |
+| **Sign Placement** | Sign at very start (e.g., `-$500`, `-500 $`, `+RM50`)                    |
 
 ### 3.2 META Directives
 
 | Directive   | Syntax                  | Description                            |
 | ----------- | ----------------------- | -------------------------------------- |
 | `commodity` | `commodity: AAPL`       | Declare a valid commodity              |
-| `alias`     | `alias: $ = USD`        | Map symbol to commodity                |
+| `alias`     | `alias: $ = USD`        | Map any string to commodity            |
 | `untracked` | `untracked: @Brokerage` | Accounts excluded from budget tracking |
 
 - All amounts require an explicit symbol or commodity
-- Aliases implicitly declare both the symbol and the commodity
+- Aliases implicitly declare both the alias and the commodity
+- Defined aliases and commodities can be used as prefix symbols in amounts (e.g., `-RM50`, `-USD100`)
 - `untracked:` supports wildcards: `@Investments:*` matches all children
 
 ### 3.3 Entities
@@ -121,7 +122,7 @@ section         = ">>>" SECTION_NAME NEWLINE block*
 
 ; META section
 meta_line       = "commodity:" COMMODITY
-                | "alias:" SYMBOL "=" COMMODITY
+                | "alias:" ALIAS_KEY "=" COMMODITY
                 | "untracked:" account_pattern
 account_pattern = "@" IDENTIFIER (":" IDENTIFIER)* (":" "*")?
 
@@ -141,7 +142,8 @@ transaction     = amount target tag*
 assertion       = "==" amount
 
 ; Shared primitives
-amount          = SIGN? SYMBOL? NUMBER SYMBOL? COMMODITY?
+amount          = SIGN? SYMBOL? NUMBER SYMBOL?
+SYMBOL          = ALIAS | COMMODITY
 target          = amount                     ; swap (second amount)
                 | category                   ; expense/income flow
                 | account category?          ; transfer (category for tracked→untracked)
@@ -228,3 +230,4 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 | 0.2.7   | 2026-01-03 | Indentation optional; dispatch uses first non-whitespace char                                 |
 | 0.3.0   | 2026-01-03 | Removed START section; opening balances via `&Opening:Balance`                                |
 | 0.4.0   | 2026-01-03 | Simplified spec: consolidated diagnostics, moved advanced patterns to appendix, reduced prose |
+| 0.5.0   | 2026-01-17 | Aliases accept any string; prefix/suffix symbols support both aliases and commodities         |

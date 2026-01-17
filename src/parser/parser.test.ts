@@ -138,7 +138,7 @@ describe("parse", () => {
 				}
 			});
 
-			it("resolves RM alias to MYR commodity", () => {
+			it("resolves RM prefix alias to MYR commodity", () => {
 				const maybankOpening = result.data.ledger.find(
 					(e) =>
 						e.kind === "transaction" &&
@@ -149,8 +149,51 @@ describe("parse", () => {
 				expect(maybankOpening).toBeDefined();
 				if (maybankOpening?.kind === "transaction") {
 					expect(maybankOpening.amount.commodity).toBe("MYR");
+					expect(maybankOpening.amount.value).toBe(1200);
 				}
 			});
+		});
+
+		it("parses prefix and suffix symbols (aliases and commodities)", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+				commodity: AAPL
+				alias: $ = USD
+				alias: RM = MYR
+				alias: ₿ = BTC
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 +$100 &Income
+				  2026-01-02 -RM50 &Food
+				  2026-01-03 +₿ 0.5 &Income
+				  2026-01-04 -USD 25 &Food
+				  2026-01-05 +AAPL10 &Income
+
+				  2026-01-06 +100$ &Income
+				  2026-01-07 -50RM &Food
+				  2026-01-08 +0.5 ₿ &Income
+				  2026-01-09 -25 USD &Food
+				  2026-01-10 +10 AAPL &Income
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+
+			const entries = result.data.ledger.filter(
+				(e) => e.kind === "transaction",
+			);
+			expect(entries).toHaveLength(10);
+			expect(entries[0].amount).toMatchObject({ commodity: "USD", value: 100 });
+			expect(entries[1].amount).toMatchObject({ commodity: "MYR", value: 50 });
+			expect(entries[2].amount).toMatchObject({ commodity: "BTC", value: 0.5 });
+			expect(entries[3].amount).toMatchObject({ commodity: "USD", value: 25 });
+			expect(entries[4].amount).toMatchObject({ commodity: "AAPL", value: 10 });
+			expect(entries[5].amount).toMatchObject({ commodity: "USD", value: 100 });
+			expect(entries[6].amount).toMatchObject({ commodity: "MYR", value: 50 });
+			expect(entries[7].amount).toMatchObject({ commodity: "BTC", value: 0.5 });
+			expect(entries[8].amount).toMatchObject({ commodity: "USD", value: 25 });
+			expect(entries[9].amount).toMatchObject({ commodity: "AAPL", value: 10 });
 		});
 	});
 

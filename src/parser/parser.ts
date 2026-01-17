@@ -157,12 +157,33 @@ function parseIdentifier(p: Parser): string {
 	return result;
 }
 
-function parseSymbol(p: Parser): string {
-	const ch = peek(p);
-	if ("$€£¥₹₽₩₪฿".includes(ch)) {
-		return advance(p);
+function parseAliasKey(p: Parser): string {
+	let result = "";
+	while (!atEnd(p)) {
+		const ch = peek(p);
+		if (ch === "=" || ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
+			break;
+		}
+		result += advance(p);
 	}
-	return parseIdentifier(p);
+	return result;
+}
+
+function matchSymbol(p: Parser): string | null {
+	const aliases = Array.from(p.data.meta.aliases.keys());
+	const commodities = Array.from(p.data.meta.commodities);
+	const symbols = [...aliases, ...commodities].sort(
+		(a, b) => b.length - a.length,
+	);
+	for (const symbol of symbols) {
+		if (p.source.startsWith(symbol, p.pos)) {
+			for (let i = 0; i < symbol.length; i++) {
+				advance(p);
+			}
+			return symbol;
+		}
+	}
+	return null;
 }
 
 function parseHierarchicalName(p: Parser): string {
@@ -225,7 +246,7 @@ function parseMetaDirective(p: Parser): void {
 			);
 		}
 	} else if (keyword === "alias") {
-		const symbol = parseSymbol(p);
+		const aliasKey = parseAliasKey(p).trim();
 		skipHorizontalWhitespace(p);
 		if (!match(p, "=")) {
 			p.errors.push(
@@ -236,8 +257,8 @@ function parseMetaDirective(p: Parser): void {
 		}
 		skipHorizontalWhitespace(p);
 		const commodity = parseIdentifier(p);
-		if (symbol && commodity) {
-			p.data.meta.aliases.set(symbol, commodity);
+		if (aliasKey && commodity) {
+			p.data.meta.aliases.set(aliasKey, commodity);
 			p.data.meta.commodities.add(commodity);
 		}
 	} else if (keyword === "untracked") {
@@ -348,11 +369,11 @@ function parseAmount(p: Parser): Amount | null {
 	}
 
 	let commodity: string | null = null;
-	const ch = peek(p);
 
-	if ("$€£¥₹₽₩₪฿".includes(ch)) {
-		const symbol = advance(p);
-		commodity = resolveCommodity(p, symbol);
+	const matchedSymbol = matchSymbol(p);
+	if (matchedSymbol) {
+		commodity = resolveCommodity(p, matchedSymbol);
+		skipHorizontalWhitespace(p);
 	}
 
 	const numStart = markStart(p);
@@ -382,10 +403,10 @@ function parseAmount(p: Parser): Amount | null {
 
 	if (!commodity) {
 		skipHorizontalWhitespace(p);
-		const afterNum = peek(p);
-		if ("$€£¥₹₽₩₪฿".includes(afterNum)) {
-			commodity = resolveCommodity(p, advance(p));
-		} else if (/[a-zA-Z]/.test(afterNum)) {
+		const suffixSymbol = matchSymbol(p);
+		if (suffixSymbol) {
+			commodity = resolveCommodity(p, suffixSymbol);
+		} else if (/[a-zA-Z]/.test(peek(p))) {
 			const ident = parseIdentifier(p);
 			commodity = resolveCommodity(p, ident);
 		}
