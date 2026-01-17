@@ -151,29 +151,28 @@ export function spanFrom(
 	};
 }
 
-function parseIdentifier(p: Parser): string {
-	let result = "";
-	while (!atEnd(p)) {
-		const ch = peek(p);
-		if (/[a-zA-Z0-9_]/.test(ch)) {
-			result += advance(p);
-		} else {
-			break;
-		}
+function scanIdentifier(p: Parser): void {
+	while (!atEnd(p) && /[a-zA-Z0-9_]/.test(peek(p))) {
+		advance(p);
 	}
-	return result;
+}
+
+function parseIdentifier(p: Parser): string {
+	const start = p.pos;
+	scanIdentifier(p);
+	return p.source.slice(start, p.pos);
 }
 
 function parseAliasKey(p: Parser): string {
-	let result = "";
+	const start = p.pos;
 	while (!atEnd(p)) {
 		const ch = peek(p);
 		if (ch === "=" || ch === " " || ch === "\t" || ch === "\n" || ch === "\r") {
 			break;
 		}
-		result += advance(p);
+		advance(p);
 	}
-	return result;
+	return p.source.slice(start, p.pos);
 }
 
 function matchSymbol(p: Parser): string | null {
@@ -189,17 +188,18 @@ function matchSymbol(p: Parser): string | null {
 }
 
 function parseHierarchicalName(p: Parser): string {
-	let result = parseIdentifier(p);
+	const start = p.pos;
+	scanIdentifier(p);
 	while (peek(p) === ":") {
 		const nextChar = p.source[p.pos + 1] ?? "";
 		if (/[a-zA-Z0-9_]/.test(nextChar)) {
-			result += advance(p);
-			result += parseIdentifier(p);
+			advance(p);
+			scanIdentifier(p);
 		} else {
 			break;
 		}
 	}
-	return result;
+	return p.source.slice(start, p.pos);
 }
 
 function parseSectionMarker(p: Parser): void {
@@ -299,17 +299,17 @@ function parseMetaDirective(p: Parser): void {
 
 function parsePeriod(p: Parser): string | null {
 	const start = markStart(p);
-	let result = "";
+	const startPos = p.pos;
 
 	for (let i = 0; i < 4; i++) {
 		const ch = peek(p);
 		if (/[0-9]/.test(ch)) {
-			result += advance(p);
+			advance(p);
 		} else {
 			p.errors.push(
 				invalidEntryError(
 					spanFrom(p, start),
-					`Invalid period: '${result + ch}'`,
+					`Invalid period: '${p.source.slice(startPos, p.pos) + ch}'`,
 				),
 			);
 			return null;
@@ -318,28 +318,31 @@ function parsePeriod(p: Parser): string | null {
 
 	if (peek(p) !== "-") {
 		p.errors.push(
-			invalidEntryError(spanFrom(p, start), `Invalid period: '${result}'`),
+			invalidEntryError(
+				spanFrom(p, start),
+				`Invalid period: '${p.source.slice(startPos, p.pos)}'`,
+			),
 		);
 		return null;
 	}
-	result += advance(p);
+	advance(p);
 
 	for (let i = 0; i < 2; i++) {
 		const ch = peek(p);
 		if (/[0-9]/.test(ch)) {
-			result += advance(p);
+			advance(p);
 		} else {
 			p.errors.push(
 				invalidEntryError(
 					spanFrom(p, start),
-					`Invalid period: '${result + ch}'`,
+					`Invalid period: '${p.source.slice(startPos, p.pos) + ch}'`,
 				),
 			);
 			return null;
 		}
 	}
 
-	return result;
+	return p.source.slice(startPos, p.pos);
 }
 
 function parseCategoryRef(p: Parser): CategoryRef | null {
@@ -515,15 +518,18 @@ function parseAccountRef(p: Parser): AccountRef | null {
 
 function parseDate(p: Parser): string | null {
 	const start = markStart(p);
-	let result = "";
+	const startPos = p.pos;
 
 	for (let i = 0; i < 4; i++) {
 		const ch = peek(p);
 		if (/[0-9]/.test(ch)) {
-			result += advance(p);
+			advance(p);
 		} else {
 			p.errors.push(
-				invalidEntryError(spanFrom(p, start), `Invalid date: '${result + ch}'`),
+				invalidEntryError(
+					spanFrom(p, start),
+					`Invalid date: '${p.source.slice(startPos, p.pos) + ch}'`,
+				),
 			);
 			return null;
 		}
@@ -531,19 +537,25 @@ function parseDate(p: Parser): string | null {
 
 	if (peek(p) !== "-") {
 		p.errors.push(
-			invalidEntryError(spanFrom(p, start), `Invalid date: '${result}'`),
+			invalidEntryError(
+				spanFrom(p, start),
+				`Invalid date: '${p.source.slice(startPos, p.pos)}'`,
+			),
 		);
 		return null;
 	}
-	result += advance(p);
+	advance(p);
 
 	for (let i = 0; i < 2; i++) {
 		const ch = peek(p);
 		if (/[0-9]/.test(ch)) {
-			result += advance(p);
+			advance(p);
 		} else {
 			p.errors.push(
-				invalidEntryError(spanFrom(p, start), `Invalid date: '${result + ch}'`),
+				invalidEntryError(
+					spanFrom(p, start),
+					`Invalid date: '${p.source.slice(startPos, p.pos) + ch}'`,
+				),
 			);
 			return null;
 		}
@@ -551,25 +563,31 @@ function parseDate(p: Parser): string | null {
 
 	if (peek(p) !== "-") {
 		p.errors.push(
-			invalidEntryError(spanFrom(p, start), `Invalid date: '${result}'`),
+			invalidEntryError(
+				spanFrom(p, start),
+				`Invalid date: '${p.source.slice(startPos, p.pos)}'`,
+			),
 		);
 		return null;
 	}
-	result += advance(p);
+	advance(p);
 
 	for (let i = 0; i < 2; i++) {
 		const ch = peek(p);
 		if (/[0-9]/.test(ch)) {
-			result += advance(p);
+			advance(p);
 		} else {
 			p.errors.push(
-				invalidEntryError(spanFrom(p, start), `Invalid date: '${result + ch}'`),
+				invalidEntryError(
+					spanFrom(p, start),
+					`Invalid date: '${p.source.slice(startPos, p.pos) + ch}'`,
+				),
 			);
 			return null;
 		}
 	}
 
-	return result;
+	return p.source.slice(startPos, p.pos);
 }
 
 function parseTarget(p: Parser): Target | null {
@@ -637,11 +655,12 @@ function parseComment(p: Parser): string | null {
 	advance(p);
 	skipHorizontalWhitespace(p);
 
-	let result = "";
+	const start = p.pos;
 	while (!atEnd(p) && peek(p) !== "\n") {
-		result += advance(p);
+		advance(p);
 	}
-	return result.trim() || null;
+	const result = p.source.slice(start, p.pos).trim();
+	return result || null;
 }
 
 function parseLedgerLine(p: Parser): void {

@@ -68,10 +68,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 ### Phase 1.7 Performance Optimizations (TODO)
 
 **Parser string concatenation (O(n²) potential):**
-- [ ] Replace `result += advance(p)` loops with slice-based extraction
-- Affected functions: `parseIdentifier`, `parseAliasKey`, `parseComment`, `parseHierarchicalName`
-- Pattern: `const start = p.pos; while (...) advance(p); return p.source.slice(start, p.pos);`
-- Note: Must preserve correct `p.pos/line/col` tracking
+- [x] Replace `result += advance(p)` loops with slice-based extraction
 
 **Validation trunk/ancestor computations (O(k²) per path):**
 - [ ] Rewrite `collectTrunkEntities()` to build prefixes incrementally
