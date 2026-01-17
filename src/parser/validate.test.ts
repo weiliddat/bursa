@@ -1,5 +1,6 @@
 import dedent from "dedent";
 import { describe, expect, it } from "vitest";
+
 import { parse } from "./parser";
 
 describe("validation", () => {

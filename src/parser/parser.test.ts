@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import dedent from "dedent";
+import { describe, expect, it } from "vitest";
 
 import { parse } from "./parser";
 

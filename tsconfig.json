@@ -3,7 +3,7 @@
 		"target": "ES2023",
 		"module": "ESNext",
 		"skipLibCheck": true,
-		"types": ["vitest/globals", "node"],
+		"types": ["node"],
 
 		/* Bundler mode */
 		"moduleResolution": "bundler",
