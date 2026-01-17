@@ -1,13 +1,9 @@
 >>> META ; configuration
-commodity: USD ; US Dollar
-commodity: EUR
-commodity: MYR
+commodity: $ = USD
+commodity: € = EUR
+commodity: RM = MYR
 commodity: AAPL
 commodity: BTC
-
-alias: $ = USD ; dollar sign
-alias: € = EUR
-alias: RM = MYR
 
 untracked: @Brokerage ; exclude from budget tracking
 

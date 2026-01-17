@@ -35,12 +35,12 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 
 | Directive   | Syntax                  | Description                            |
 | ----------- | ----------------------- | -------------------------------------- |
-| `commodity` | `commodity: AAPL`       | Declare a valid commodity              |
-| `alias`     | `alias: $ = USD`        | Map any string to commodity            |
+| `commodity` | `commodity: $ = USD`    | Declare commodity with optional alias  |
 | `untracked` | `untracked: @Brokerage` | Accounts excluded from budget tracking |
 
-- All amounts require an explicit symbol or commodity
-- Aliases implicitly declare both the alias and the commodity
+- All amounts require an explicit commodity (or its alias)
+- `commodity:` declares a commodity; optionally maps an alias to it (e.g., `$ = USD`)
+- Without alias: `commodity: AAPL` declares just the commodity
 - Defined aliases and commodities can be used as prefix symbols in amounts (e.g., `-RM50`, `-USD100`)
 - `untracked:` supports wildcards: `@Investments:*` matches all children
 
@@ -121,8 +121,7 @@ file            = section*
 section         = ">>>" SECTION_NAME NEWLINE block*
 
 ; META section
-meta_line       = "commodity:" COMMODITY
-                | "alias:" ALIAS_KEY "=" COMMODITY
+meta_line       = "commodity:" (ALIAS_KEY "=")? COMMODITY
                 | "untracked:" account_pattern
 account_pattern = "@" IDENTIFIER (":" IDENTIFIER)* (":" "*")?
 
@@ -231,3 +230,4 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 | 0.3.0   | 2026-01-03 | Removed START section; opening balances via `&Opening:Balance`                                |
 | 0.4.0   | 2026-01-03 | Simplified spec: consolidated diagnostics, moved advanced patterns to appendix, reduced prose |
 | 0.5.0   | 2026-01-17 | Aliases accept any string; prefix/suffix symbols support both aliases and commodities         |
+| 0.5.1   | 2026-01-17 | Combined alias and commodity directives into single `commodity:` directive                    |

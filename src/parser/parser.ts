@@ -243,29 +243,30 @@ function parseMetaDirective(p: Parser): void {
 	skipHorizontalWhitespace(p);
 
 	if (keyword === "commodity") {
-		const commodity = parseIdentifier(p);
-		if (commodity) {
-			p.data.meta.commodities.add(commodity);
-		} else {
+		const first = parseAliasKey(p).trim();
+		if (!first) {
 			p.errors.push(
 				invalidDirectiveError(spanFrom(p, start), "Expected commodity name"),
-			);
-		}
-	} else if (keyword === "alias") {
-		const aliasKey = parseAliasKey(p).trim();
-		skipHorizontalWhitespace(p);
-		if (!match(p, "=")) {
-			p.errors.push(
-				invalidDirectiveError(spanFrom(p, markStart(p)), "Expected '='"),
 			);
 			skipLine(p);
 			return;
 		}
 		skipHorizontalWhitespace(p);
-		const commodity = parseIdentifier(p);
-		if (aliasKey && commodity) {
-			p.data.meta.aliases.set(aliasKey, commodity);
-			p.data.meta.commodities.add(commodity);
+		if (match(p, "=")) {
+			// Alias syntax: "commodity: $ = USD" or "commodity: RM = MYR"
+			skipHorizontalWhitespace(p);
+			const commodity = parseIdentifier(p);
+			if (commodity) {
+				p.data.meta.aliases.set(first, commodity);
+				p.data.meta.commodities.add(commodity);
+			} else {
+				p.errors.push(
+					invalidDirectiveError(spanFrom(p, start), "Expected commodity name"),
+				);
+			}
+		} else {
+			// Plain commodity: "commodity: AAPL" or "commodity: $"
+			p.data.meta.commodities.add(first);
 		}
 	} else if (keyword === "untracked") {
 		if (!match(p, "@")) {

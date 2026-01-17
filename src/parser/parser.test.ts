@@ -42,7 +42,9 @@ describe("parse", () => {
 				expect(symbols).toContain("USD");
 				expect(symbols).toContain("RM");
 				for (let i = 1; i < symbols.length; i++) {
-					expect(symbols[i - 1].length).toBeGreaterThanOrEqual(symbols[i].length);
+					expect(symbols[i - 1].length).toBeGreaterThanOrEqual(
+						symbols[i].length,
+					);
 				}
 			});
 		});
@@ -168,11 +170,10 @@ describe("parse", () => {
 		it("parses prefix and suffix symbols (aliases and commodities)", () => {
 			const source = dedent`
 				>>> META
-				commodity: USD
+				commodity: $ = USD
+				commodity: RM = MYR
+				commodity: ₿ = BTC
 				commodity: AAPL
-				alias: $ = USD
-				alias: RM = MYR
-				alias: ₿ = BTC
 
 				>>> LEDGER
 				@Checking
@@ -425,16 +426,26 @@ describe("parse", () => {
 			expect(result.data.meta.untrackedPatterns).toContain("@Brokerage:*");
 		});
 
-		it("InvalidDirectiveError for missing '=' in alias", () => {
+		it("parses non-identifier commodity without alias", () => {
 			const source = dedent`
 				>>> META
-				alias: $ USD
+				commodity: $
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.data.meta.commodities).toContain("$");
+		});
+
+		it("InvalidDirectiveError for missing commodity after identifier '='", () => {
+			const source = dedent`
+				>>> META
+				commodity: RM =
 			`;
 			const result = parse(source);
 			expect(result.errors).toContainEqual(
 				expect.objectContaining({
 					name: "InvalidDirectiveError",
-					message: "Expected '='",
+					message: "Expected commodity name",
 				}),
 			);
 		});

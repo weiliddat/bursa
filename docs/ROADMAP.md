@@ -15,7 +15,7 @@ Build a fused single-pass parser that reads `.bursa` files and produces a `Ledge
 
 ### Phase 1.2: Section Parsing
 
-- [x] META section: `commodity:`, `alias:`, `untracked:`
+- [x] META section: `commodity:`, `untracked:`
 - [x] BUDGET section: period headers, category + amount
 - [x] LEDGER section: account blocks, transactions, assertions
 
@@ -62,7 +62,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Cover syntax edge cases
 - [x] Commodity aliases
 - [x] Cache sorted symbols for `matchSymbol()` in `p.data.meta.symbols`
-- [ ] Combine commodity and alias directives, can define $ = USD, RM = MYR in one go
+- [x] Combine commodity and alias directives, can define $ = USD, RM = MYR in one go
 - [ ] Review and benchmark parser performance
 
 ### Phase 1.7 Performance Optimizations (TODO)

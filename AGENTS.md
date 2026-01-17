@@ -26,7 +26,6 @@ npm run test:coverage # Run with coverage report
 
 # Code Quality
 npm run check         # TypeScript type checking (no emit)
-npm run lint          # Biome linting check
 npm run lint:fix      # Biome auto-fix
 ```
 
