@@ -80,24 +80,29 @@ describe("validation", () => {
 		);
 	});
 
-	it("no warning when expense category exactly matches budget", () => {
+	it("no warning when expense categories are all leaves", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
 
 			>>> BUDGET
 			2026-01
-			  &Food 100 USD
+			  &Utilities 50 USD
+			  &Food:Groceries 80 USD
+			  &Food:Dining 20 USD
 
 			>>> LEDGER
 			@Checking
-			  2026-01-01 -10 USD &Food
+			  2026-01-01 -10 USD &Utilities
+			  2026-01-02 -10 USD &Food:Groceries
+			  2026-01-03 -5 USD &Food:Dining
 		`;
 		const result = parse(source);
+		expect(result.errors).toHaveLength(0);
 		expect(result.warnings).toHaveLength(0);
 	});
 
-	it("no warning when expense sub-category has budgeted ancestor", () => {
+	it("errors when budget category becomes trunk via ledger sub-categories", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
@@ -109,10 +114,15 @@ describe("validation", () => {
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -10 USD &Food:Groceries
-			  2026-01-02 -5 USD &Food:Dining:Restaurants
+			  2026-01-02 -5 USD &Food:Dining
 		`;
 		const result = parse(source);
-		expect(result.warnings).toHaveLength(0);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "TrunkEntityError",
+				message: "Cannot use category '&Food' directly; it has sub-categories",
+			}),
+		);
 	});
 
 	it("detects transfer to untracked account missing category", () => {
@@ -283,28 +293,6 @@ describe("validation", () => {
 				message: "Cannot use category '&Food' directly; it has sub-categories",
 			}),
 		);
-	});
-
-	it("allows leaf-only accounts and categories", () => {
-		const source = dedent`
-			>>> META
-			commodity: USD
-
-			>>> BUDGET
-			2026-01
-			  &Food:Groceries 300 USD
-			  &Food:DiningOut 200 USD
-
-			>>> LEDGER
-			@Bank:Checking
-			  2026-01-01 +1000 USD &Opening
-			  2026-01-02 -50 USD &Food:Groceries
-
-			@Bank:Savings
-			  2026-01-01 +500 USD &Opening
-		`;
-		const result = parse(source);
-		expect(result.errors).toHaveLength(0);
 	});
 
 	it("detects trunk category on transfer target", () => {

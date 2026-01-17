@@ -147,17 +147,6 @@ function validateLeafEntities(p: Parser): void {
 	}
 }
 
-function hasBudgetedAncestor(
-	category: string,
-	budgetSet: Set<string>,
-): boolean {
-	const parts = category.split(":");
-	for (let i = parts.length; i > 0; i--) {
-		if (budgetSet.has(parts.slice(0, i).join(":"))) return true;
-	}
-	return false;
-}
-
 function isUntracked(account: string, patterns: string[]): boolean {
 	// account is like "@Brokerage:Stocks"
 	// pattern can be "@Brokerage" (exact) or "@Brokerage:*" (wildcard for children)
@@ -239,7 +228,7 @@ function validateLedger(p: Parser): void {
 
 			// Check target
 			if (entry.target.kind === "category") {
-				if (!hasBudgetedAncestor(entry.target.ref.raw, budgetCategories)) {
+				if (!budgetCategories.has(entry.target.ref.raw)) {
 					p.warnings.push(
 						unbudgetedCategoryWarning(
 							entry.target.ref.span,
