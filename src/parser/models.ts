@@ -78,8 +78,12 @@ export interface Ledger {
 
 		// set of all "leaf" accounts for validation
 		accounts: Set<string>;
+		// set of all "trunk" accounts (parents of other accounts)
+		accountGroups: Set<string>;
 		// set of all "leaf" categories for validation
 		categories: Set<string>;
+		// set of all "trunk" categories (parents of other categories)
+		categoryGroups: Set<string>;
 	};
 	budget: BudgetEntry[];
 	ledger: LedgerEntry[];

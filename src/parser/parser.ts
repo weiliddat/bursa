@@ -3,6 +3,7 @@ import {
 	invalidDirectiveError,
 	invalidEntryError,
 	invalidSectionError,
+	trunkEntityError,
 } from "./diagnostics";
 import type {
 	AccountRef,
@@ -42,7 +43,9 @@ export function createLedger(): Ledger {
 			untrackedPatterns: [],
 			symbols: [],
 			accounts: new Set<string>(),
+			accountGroups: new Set<string>(),
 			categories: new Set<string>(),
+			categoryGroups: new Set<string>(),
 		},
 		budget: [],
 		ledger: [],
@@ -53,6 +56,60 @@ function buildSymbols(p: Parser): void {
 	const { commodities, aliases } = p.data.meta;
 	const set = new Set([...commodities, ...aliases.keys()]);
 	p.data.meta.symbols = [...set].sort((a, b) => b.length - a.length);
+}
+
+function getPrefixes(path: string): string[] {
+	const prefixes: string[] = [];
+	let idx = path.indexOf(":", 1);
+	while (idx !== -1) {
+		prefixes.push(path.slice(0, idx));
+		idx = path.indexOf(":", idx + 1);
+	}
+	return prefixes;
+}
+
+function registerAccount(p: Parser, ref: AccountRef): void {
+	const { accounts, accountGroups: accountTrunks } = p.data.meta;
+	const raw = ref.raw;
+
+	if (accounts.has(raw)) return;
+
+	if (accountTrunks.has(raw)) {
+		p.errors.push(trunkEntityError(ref.span, "account", raw));
+		return;
+	}
+
+	for (const prefix of getPrefixes(raw)) {
+		if (accounts.has(prefix)) {
+			p.errors.push(trunkEntityError(ref.span, "account", prefix));
+			accounts.delete(prefix);
+		}
+		accountTrunks.add(prefix);
+	}
+
+	accounts.add(raw);
+}
+
+function registerCategory(p: Parser, ref: CategoryRef): void {
+	const { categories, categoryGroups: categoryTrunks } = p.data.meta;
+	const raw = ref.raw;
+
+	if (categories.has(raw)) return;
+
+	if (categoryTrunks.has(raw)) {
+		p.errors.push(trunkEntityError(ref.span, "category", raw));
+		return;
+	}
+
+	for (const prefix of getPrefixes(raw)) {
+		if (categories.has(prefix)) {
+			p.errors.push(trunkEntityError(ref.span, "category", prefix));
+			categories.delete(prefix);
+		}
+		categoryTrunks.add(prefix);
+	}
+
+	categories.add(raw);
 }
 
 export function createParser(source: string): Parser {
@@ -490,7 +547,7 @@ function parseBudgetLine(p: Parser): void {
 			amount,
 			span: spanFrom(p, start),
 		});
-		p.data.meta.categories.add(categoryRef.raw);
+		registerCategory(p, categoryRef);
 
 		skipLine(p);
 		return;
@@ -674,7 +731,7 @@ function parseLedgerLine(p: Parser): void {
 		const accountRef = parseAccountRef(p);
 		if (accountRef) {
 			p.currentAccount = accountRef;
-			p.data.meta.accounts.add(accountRef.raw);
+			registerAccount(p, accountRef);
 		}
 		skipLine(p);
 		return;

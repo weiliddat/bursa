@@ -694,9 +694,123 @@ describe("parse", () => {
 			const accounts = result.data.meta.accounts;
 			expect(accounts).toContain("@AccountWithEntries");
 			expect(accounts).toContain("@EmptyAccount");
+		});
+	});
 
-			const categories = result.data.meta.categories;
-			expect(categories).toContain("&Income");
+	describe("trunk entity detection", () => {
+		it("errors when leaf account declared before trunk", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Bank:Savings
+
+				@Bank
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "TrunkEntityError",
+					message: "Cannot use account '@Bank' directly; it has sub-accounts",
+				}),
+			);
+			expect(result.data.meta.accounts).toContain("@Bank:Savings");
+			expect(result.data.meta.accounts).not.toContain("@Bank");
+			expect(result.data.meta.accountGroups).toContain("@Bank");
+		});
+
+		it("errors when trunk account declared before leaf", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> LEDGER
+				@Bank
+
+				@Bank:Savings
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "TrunkEntityError",
+					message: "Cannot use account '@Bank' directly; it has sub-accounts",
+				}),
+			);
+			expect(result.data.meta.accounts).toContain("@Bank:Savings");
+			expect(result.data.meta.accounts).not.toContain("@Bank");
+			expect(result.data.meta.accountGroups).toContain("@Bank");
+		});
+
+		it("errors when leaf category declared before trunk", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> BUDGET
+				2026-01
+				  &Food:Groceries 100 USD
+				  &Food 200 USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "TrunkEntityError",
+					message:
+						"Cannot use category '&Food' directly; it has sub-categories",
+				}),
+			);
+			expect(result.data.meta.categories).toContain("&Food:Groceries");
+			expect(result.data.meta.categories).not.toContain("&Food");
+			expect(result.data.meta.categoryGroups).toContain("&Food");
+		});
+
+		it("errors when trunk category declared before leaf", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> BUDGET
+				2026-01
+				  &Food 200 USD
+				  &Food:Groceries 100 USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "TrunkEntityError",
+					message:
+						"Cannot use category '&Food' directly; it has sub-categories",
+				}),
+			);
+			expect(result.data.meta.categories).toContain("&Food:Groceries");
+			expect(result.data.meta.categories).not.toContain("&Food");
+			expect(result.data.meta.categoryGroups).toContain("&Food");
+		});
+
+		it("allows same account declared multiple times", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> BUDGET
+				2026-01
+				  &Income 100 USD
+				2026-02
+				  &Income 100 USD
+
+				>>> LEDGER
+				@Checking
+
+				@Savings
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
+
+			expect(result.data.meta.accounts).toContain("@Checking");
+			expect(result.data.meta.accounts).toContain("@Savings");
+			expect(result.data.meta.categories).toContain("&Income");
 		});
 	});
 });
