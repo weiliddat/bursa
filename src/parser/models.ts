@@ -66,10 +66,20 @@ export interface BudgetEntry {
 
 export interface Ledger {
 	meta: {
+		// e.g. USD, VOO, BTC
 		commodities: Set<string>;
+		// e.g. $ -> USD, RM -> MYR
 		aliases: Map<string, string>;
-		untrackedPatterns: string[];
+		// list of all aliases and commodities, sorted in desc length for matching
 		symbols: string[];
+
+		// untracked accounts, e.g. @Investments:BrokerageAccount or @Investments:*
+		untrackedPatterns: string[];
+
+		// set of all "leaf" accounts for validation
+		accounts: Set<string>;
+		// set of all "leaf" categories for validation
+		categories: Set<string>;
 	};
 	budget: BudgetEntry[];
 	ledger: LedgerEntry[];

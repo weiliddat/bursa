@@ -670,4 +670,33 @@ describe("parse", () => {
 			);
 		});
 	});
+
+	describe("empty account blocks", () => {
+		it("parses account block without entries", () => {
+			const source = dedent`
+				>>> META
+				commodity: USD
+
+				>>> BUDGET
+				2026-01
+				  &Income 100 USD
+
+				>>> LEDGER
+				@EmptyAccount
+
+				@AccountWithEntries
+				  2026-01-01 +100 USD &Income
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
+
+			const accounts = result.data.meta.accounts;
+			expect(accounts).toContain("@AccountWithEntries");
+			expect(accounts).toContain("@EmptyAccount");
+
+			const categories = result.data.meta.categories;
+			expect(categories).toContain("&Income");
+		});
+	});
 });

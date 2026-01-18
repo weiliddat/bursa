@@ -41,6 +41,8 @@ export function createLedger(): Ledger {
 			aliases: new Map<string, string>(),
 			untrackedPatterns: [],
 			symbols: [],
+			accounts: new Set<string>(),
+			categories: new Set<string>(),
 		},
 		budget: [],
 		ledger: [],
@@ -488,6 +490,7 @@ function parseBudgetLine(p: Parser): void {
 			amount,
 			span: spanFrom(p, start),
 		});
+		p.data.meta.categories.add(categoryRef.raw);
 
 		skipLine(p);
 		return;
@@ -671,6 +674,7 @@ function parseLedgerLine(p: Parser): void {
 		const accountRef = parseAccountRef(p);
 		if (accountRef) {
 			p.currentAccount = accountRef;
+			p.data.meta.accounts.add(accountRef.raw);
 		}
 		skipLine(p);
 		return;
