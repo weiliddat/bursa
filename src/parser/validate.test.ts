@@ -102,7 +102,7 @@ describe("validation", () => {
 		expect(result.warnings).toHaveLength(0);
 	});
 
-	it("errors when budget category becomes trunk via ledger sub-categories", () => {
+	it("warns when transaction uses sub-category not in budget", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
@@ -114,13 +114,12 @@ describe("validation", () => {
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -10 USD &Food:Groceries
-			  2026-01-02 -5 USD &Food:Dining
 		`;
 		const result = parse(source);
-		expect(result.errors).toContainEqual(
+		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
-				name: "TrunkEntityError",
-				message: "Cannot use category '&Food' directly; it has sub-categories",
+				name: "UnbudgetedCategoryWarning",
+				message: "Expense category not in budget: '&Food:Groceries'",
 			}),
 		);
 	});
@@ -134,6 +133,8 @@ describe("validation", () => {
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage
+
+			@Brokerage
 		`;
 		const result = parse(source);
 		expect(result.errors).toContainEqual(
@@ -157,6 +158,8 @@ describe("validation", () => {
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage &Investments
+
+			@Brokerage
 		`;
 		const result = parse(source);
 		expect(result.errors).toHaveLength(0);
@@ -235,7 +238,7 @@ describe("validation", () => {
 		);
 	});
 
-	it("detects trunk account used as transfer target", () => {
+	it("detects unknown account used as transfer target", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
@@ -243,21 +246,18 @@ describe("validation", () => {
 			>>> LEDGER
 			@Checking
 			  2026-01-01 +1000 USD &Opening
-			  2026-01-02 -100 USD @Bank
-
-			@Bank:Savings
-			  2026-01-01 +200 USD &Opening
+			  2026-01-02 -100 USD @Unknown
 		`;
 		const result = parse(source);
 		expect(result.errors).toContainEqual(
 			expect.objectContaining({
-				name: "TrunkEntityError",
-				message: "Cannot use account '@Bank' directly; it has sub-accounts",
+				name: "UnknownEntityError",
+				message: "Unknown account: '@Unknown'",
 			}),
 		);
 	});
 
-	it("detects trunk category used in transaction", () => {
+	it("warns for unbudgeted categories in transaction", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
@@ -268,10 +268,16 @@ describe("validation", () => {
 			  2026-01-02 -20 USD &Food:Groceries
 		`;
 		const result = parse(source);
-		expect(result.errors).toContainEqual(
+		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
-				name: "TrunkEntityError",
-				message: "Cannot use category '&Food' directly; it has sub-categories",
+				name: "UnbudgetedCategoryWarning",
+				message: "Expense category not in budget: '&Food'",
+			}),
+		);
+		expect(result.warnings).toContainEqual(
+			expect.objectContaining({
+				name: "UnbudgetedCategoryWarning",
+				message: "Expense category not in budget: '&Food:Groceries'",
 			}),
 		);
 	});
@@ -295,7 +301,7 @@ describe("validation", () => {
 		);
 	});
 
-	it("detects trunk category on transfer target", () => {
+	it("warns for unbudgeted category on transfer target", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
@@ -304,14 +310,14 @@ describe("validation", () => {
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage &Invest
-			  2026-01-02 -500 USD @Brokerage &Invest:Stocks
+
+			@Brokerage
 		`;
 		const result = parse(source);
-		expect(result.errors).toContainEqual(
+		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
-				name: "TrunkEntityError",
-				message:
-					"Cannot use category '&Invest' directly; it has sub-categories",
+				name: "UnbudgetedCategoryWarning",
+				message: "Expense category not in budget: '&Invest'",
 			}),
 		);
 	});
@@ -322,12 +328,17 @@ describe("validation", () => {
 			commodity: USD
 			untracked: @Brokerage:*
 
+			>>> BUDGET
+			2026-01
+			  &Investing 1000 USD
+
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage:Stocks &Investing
+
+			@Brokerage:Stocks
 		`;
 		const result = parse(source);
-		// No error for missing category since @Brokerage:Stocks matches @Brokerage:*
 		expect(result.errors).toHaveLength(0);
 	});
 
@@ -337,12 +348,17 @@ describe("validation", () => {
 			commodity: USD
 			untracked: @Brokerage:*
 
+			>>> BUDGET
+			2026-01
+			  &Investing 1000 USD
+
 			>>> LEDGER
 			@Checking
 			  2026-01-01 -1000 USD @Brokerage &Investing
+
+			@Brokerage
 		`;
 		const result = parse(source);
-		// @Brokerage exactly matches prefix of @Brokerage:*
 		expect(result.errors).toHaveLength(0);
 	});
 

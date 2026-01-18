@@ -413,6 +413,8 @@ describe("parse", () => {
 				>>> LEDGER
 				@Checking
 				  2026-02-01 -100 USD @Brokerage
+
+				@Brokerage
 			`;
 			const result = parse(source);
 			expect(result.errors).toHaveLength(0);
