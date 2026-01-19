@@ -58,7 +58,8 @@ function validateCommodities(p: Parser): void {
 }
 
 function validateLedger(p: Parser): void {
-	const { accounts, categories, untrackedAccounts } = p.data.meta;
+	const { accounts, categories, categoryGroups, untrackedAccounts } =
+		p.data.meta;
 
 	const balances = new Map<string, Map<string, number>>();
 	const accountDates = new Map<string, string>();
@@ -114,12 +115,10 @@ function validateLedger(p: Parser): void {
 			updateBalance(accountName, entry.amount.commodity, amountVal);
 
 			if (entry.target.kind === "category") {
-				if (!categories.has(entry.target.ref.raw)) {
+				const catRaw = entry.target.ref.raw;
+				if (!categories.has(catRaw) && !categoryGroups.has(catRaw)) {
 					p.warnings.push(
-						unbudgetedCategoryWarning(
-							entry.target.ref.span,
-							entry.target.ref.raw,
-						),
+						unbudgetedCategoryWarning(entry.target.ref.span, catRaw),
 					);
 				}
 			} else if (entry.target.kind === "account") {
@@ -137,16 +136,13 @@ function validateLedger(p: Parser): void {
 					}
 				}
 
-				if (
-					entry.target.category &&
-					!categories.has(entry.target.category.raw)
-				) {
-					p.warnings.push(
-						unbudgetedCategoryWarning(
-							entry.target.category.span,
-							entry.target.category.raw,
-						),
-					);
+				if (entry.target.category) {
+					const catRaw = entry.target.category.raw;
+					if (!categories.has(catRaw) && !categoryGroups.has(catRaw)) {
+						p.warnings.push(
+							unbudgetedCategoryWarning(entry.target.category.span, catRaw),
+						);
+					}
 				}
 
 				updateBalance(targetAccount, entry.amount.commodity, -amountVal);

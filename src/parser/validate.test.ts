@@ -38,6 +38,7 @@ describe("validation", () => {
 				message: "Unknown commodity: 'EUR'",
 			}),
 		);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("detects unknown commodity in swap target", () => {
@@ -56,6 +57,7 @@ describe("validation", () => {
 				message: "Unknown commodity: 'UNKNOWN'",
 			}),
 		);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("warns when expense category is not in budget", () => {
@@ -72,6 +74,7 @@ describe("validation", () => {
 			  2026-01-01 -10 USD &Unknown
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnbudgetedCategoryWarning",
@@ -98,8 +101,8 @@ describe("validation", () => {
 			  2026-01-03 -5 USD &Food:Dining
 		`;
 		const result = parse(source);
-		expect(result.errors).toHaveLength(0);
-		expect(result.warnings).toHaveLength(0);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("warns when transaction uses sub-category not in budget", () => {
@@ -116,6 +119,7 @@ describe("validation", () => {
 			  2026-01-01 -10 USD &Food:Groceries
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnbudgetedCategoryWarning",
@@ -143,6 +147,7 @@ describe("validation", () => {
 				message: "Transfer to untracked account missing category",
 			}),
 		);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("allows transfer to untracked account with category", () => {
@@ -162,7 +167,8 @@ describe("validation", () => {
 			@Brokerage
 		`;
 		const result = parse(source);
-		expect(result.errors).toHaveLength(0);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("warns on non-chronological dates", () => {
@@ -176,6 +182,7 @@ describe("validation", () => {
 			  2026-01-01 -10 USD &Food
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "NonChronologicalWarning",
@@ -195,6 +202,7 @@ describe("validation", () => {
 			  2026-01-02 == 200 USD
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "AssertionFailedWarning",
@@ -208,19 +216,30 @@ describe("validation", () => {
 			>>> META
 			commodity: USD
 
+			>>> BUDGET
+			2026-01
+			  &Opening 100 USD
+
 			>>> LEDGER
 			@Checking
 			  2026-01-01 +100 USD &Opening
 			  ? 2026-01-02 == 200 USD
 		`;
 		const result = parse(source);
-		expect(result.errors).toHaveLength(0);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).not.toContainEqual(
+			expect.objectContaining({ name: "AssertionFailedWarning" }),
+		);
 	});
 
 	it("detects trunk account used as block header", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
+
+			>>> BUDGET
+			2026-01
+			  &Opening 300 USD
 
 			>>> LEDGER
 			@Bank
@@ -236,12 +255,17 @@ describe("validation", () => {
 				message: "Cannot use account '@Bank' directly; it has sub-accounts",
 			}),
 		);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("detects unknown account used as transfer target", () => {
 		const source = dedent`
 			>>> META
 			commodity: USD
+
+			>>> BUDGET
+			2026-01
+			  &Opening 1000 USD
 
 			>>> LEDGER
 			@Checking
@@ -255,6 +279,7 @@ describe("validation", () => {
 				message: "Unknown account: '@Unknown'",
 			}),
 		);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("warns for unbudgeted categories in transaction", () => {
@@ -268,6 +293,7 @@ describe("validation", () => {
 			  2026-01-02 -20 USD &Food:Groceries
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnbudgetedCategoryWarning",
@@ -299,6 +325,67 @@ describe("validation", () => {
 				message: "Cannot use category '&Food' directly; it has sub-categories",
 			}),
 		);
+		expect(result.warnings).toEqual([]);
+	});
+
+	it("detects trunk category used in ledger category target", () => {
+		const source = dedent`
+			>>> META
+			commodity: USD
+
+			>>> BUDGET
+			2026-01
+			  &Food:Groceries 300 USD
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -50 USD &Food
+		`;
+		const result = parse(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "TrunkEntityError",
+				message: "Cannot use category '&Food' directly; it has sub-categories",
+			}),
+		);
+		expect(result.warnings).not.toContainEqual(
+			expect.objectContaining({
+				name: "UnbudgetedCategoryWarning",
+				message: "Expense category not in budget: '&Food'",
+			}),
+		);
+	});
+
+	it("detects trunk category used in ledger account target", () => {
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage
+
+			>>> BUDGET
+			2026-01
+			  &Invest:Stocks 500 USD
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -1000 USD @Brokerage &Invest
+
+			@Brokerage
+		`;
+		const result = parse(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "TrunkEntityError",
+				message:
+					"Cannot use category '&Invest' directly; it has sub-categories",
+			}),
+		);
+		expect(result.warnings).not.toContainEqual(
+			expect.objectContaining({
+				name: "UnbudgetedCategoryWarning",
+				message: "Expense category not in budget: '&Invest'",
+			}),
+		);
 	});
 
 	it("warns for unbudgeted category on transfer target", () => {
@@ -314,6 +401,7 @@ describe("validation", () => {
 			@Brokerage
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnbudgetedCategoryWarning",
@@ -339,7 +427,8 @@ describe("validation", () => {
 			@Brokerage:Stocks
 		`;
 		const result = parse(source);
-		expect(result.errors).toHaveLength(0);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("matches exact prefix account with wildcard pattern", () => {
@@ -359,7 +448,8 @@ describe("validation", () => {
 			@Brokerage
 		`;
 		const result = parse(source);
-		expect(result.errors).toHaveLength(0);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).toEqual([]);
 	});
 
 	it("warns on unverified entry", () => {
@@ -372,6 +462,7 @@ describe("validation", () => {
 			  ? 2026-01-01 +100 USD &Opening
 		`;
 		const result = parse(source);
+		expect(result.errors).toEqual([]);
 		expect(result.warnings).toContainEqual(
 			expect.objectContaining({
 				name: "UnverifiedEntryWarning",

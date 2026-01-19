@@ -78,7 +78,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [ ] Fix UnbudgetedCategoryWarning — only warn on expenses (negative amounts)
 
 **Spec/Implementation Gaps:**
-- [ ] Enforce trunk category validation in LEDGER (register category refs during ledger parsing)
+- [x] Enforce trunk category validation in LEDGER (register category refs during ledger parsing)
 - [x] Clarify category existence semantics — unknown category is warning (UnbudgetedCategoryWarning)
 - [x] Swap target sign — made optional in spec (v0.6.0)
 

@@ -13,7 +13,7 @@ describe("parse", () => {
 		);
 		const result = parse(source);
 
-		it("parses without errors", () => {
+		it("parses without errors or warnings", () => {
 			expect(result.errors).toEqual([]);
 		});
 
@@ -176,6 +176,11 @@ describe("parse", () => {
 				commodity: ₿ = BTC
 				commodity: AAPL
 
+				>>> BUDGET
+				2026-01
+				  &Income 1000 USD
+				  &Food 500 USD
+
 				>>> LEDGER
 				@Checking
 				  2026-01-01 +$100 &Income
@@ -192,6 +197,7 @@ describe("parse", () => {
 			`;
 			const result = parse(source);
 			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
 
 			const entries = result.data.ledger.filter(
 				(e) => e.kind === "transaction",
@@ -224,6 +230,7 @@ describe("parse", () => {
 					message: "Expected account name after '@'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("handles hierarchical name with trailing colon", () => {
@@ -249,6 +256,7 @@ describe("parse", () => {
 					message: "Expected commodity name",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for missing amount after date", () => {
@@ -267,6 +275,7 @@ describe("parse", () => {
 					message: "Expected amount",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for unexpected character in entry", () => {
@@ -284,6 +293,7 @@ describe("parse", () => {
 					name: "InvalidEntryError",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidSectionError for unknown section", () => {
@@ -295,6 +305,7 @@ describe("parse", () => {
 					message: "Unknown section 'UNKNOWN'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidSectionError for content before section", () => {
@@ -309,6 +320,7 @@ describe("parse", () => {
 					message: "Content before section marker",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidDirectiveError for missing colon", () => {
@@ -323,6 +335,7 @@ describe("parse", () => {
 					message: "Expected ':'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidDirectiveError for unknown directive", () => {
@@ -337,6 +350,7 @@ describe("parse", () => {
 					message: "Unknown directive 'unknown'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for entry before account header", () => {
@@ -351,6 +365,7 @@ describe("parse", () => {
 					message: "Entry before account header",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for missing target", () => {
@@ -368,6 +383,7 @@ describe("parse", () => {
 					name: "InvalidEntryError",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for invalid date format", () => {
@@ -385,6 +401,7 @@ describe("parse", () => {
 					name: "InvalidEntryError",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for invalid category target", () => {
@@ -403,6 +420,7 @@ describe("parse", () => {
 					message: "Expected category name after '&'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("Missing category for transfers is not a syntax error", () => {
@@ -418,6 +436,7 @@ describe("parse", () => {
 			`;
 			const result = parse(source);
 			expect(result.errors).toHaveLength(0);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("parses untracked patterns with wildcards", () => {
@@ -426,6 +445,8 @@ describe("parse", () => {
 				untracked: @Brokerage:*
 			`;
 			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
 			expect(result.data.meta.untrackedPatterns).toContain("@Brokerage:*");
 		});
 
@@ -436,6 +457,7 @@ describe("parse", () => {
 			`;
 			const result = parse(source);
 			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
 			expect(result.data.meta.commodities).toContain("$");
 		});
 
@@ -451,6 +473,7 @@ describe("parse", () => {
 					message: "Expected commodity name",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidDirectiveError for missing '@' in untracked", () => {
@@ -465,6 +488,7 @@ describe("parse", () => {
 					message: "Expected '@'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for budget entry before period", () => {
@@ -479,6 +503,7 @@ describe("parse", () => {
 					message: "Budget entry before period header",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for missing budget amount", () => {
@@ -494,6 +519,7 @@ describe("parse", () => {
 					message: "Expected amount",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for unexpected character in budget", () => {
@@ -509,6 +535,7 @@ describe("parse", () => {
 					message: "Unexpected character: '!'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for malformed period", () => {
@@ -520,6 +547,7 @@ describe("parse", () => {
 			`;
 			const result = parse(source);
 			expect(result.errors.length).toBe(3);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for malformed date", () => {
@@ -534,6 +562,7 @@ describe("parse", () => {
 			`;
 			const result = parse(source);
 			expect(result.errors.length).toBe(5);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for missing amount in assertion", () => {
@@ -549,6 +578,7 @@ describe("parse", () => {
 					message: "Expected amount after '=='",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for missing commodity", () => {
@@ -564,6 +594,7 @@ describe("parse", () => {
 					message: "Missing commodity for amount: '100'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for non-numeric amount", () => {
@@ -579,6 +610,7 @@ describe("parse", () => {
 					message: "Expected amount",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for malformed amount", () => {
@@ -594,12 +626,18 @@ describe("parse", () => {
 					message: "Malformed amount: '1.2.3'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("parses scientific notation amounts", () => {
 			const source = dedent`
 				>>> META
 				commodity: USD
+
+				>>> BUDGET
+				2026-01
+				  &Cat 1000000 USD
+
 				>>> LEDGER
 				@Acc
 				  2026-01-01 1e6 USD &Cat
@@ -607,6 +645,7 @@ describe("parse", () => {
 			`;
 			const result = parse(source);
 			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
 			const entries = result.data.ledger.filter(
 				(e) => e.kind === "transaction",
 			);
@@ -640,6 +679,7 @@ describe("parse", () => {
 					message: "Expected '>>>'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for invalid category ref in budget", () => {
@@ -655,6 +695,7 @@ describe("parse", () => {
 					message: "Expected category name after '&'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 
 		it("InvalidEntryError for invalid target in ledger", () => {
@@ -670,6 +711,7 @@ describe("parse", () => {
 					message: "Expected target, got '!'",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 		});
 	});
 
@@ -717,6 +759,7 @@ describe("parse", () => {
 					message: "Cannot use account '@Bank' directly; it has sub-accounts",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 			expect(result.data.meta.accounts).toContain("@Bank:Savings");
 			expect(result.data.meta.accounts).not.toContain("@Bank");
 			expect(result.data.meta.accountGroups).toContain("@Bank");
@@ -739,6 +782,7 @@ describe("parse", () => {
 					message: "Cannot use account '@Bank' directly; it has sub-accounts",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 			expect(result.data.meta.accounts).toContain("@Bank:Savings");
 			expect(result.data.meta.accounts).not.toContain("@Bank");
 			expect(result.data.meta.accountGroups).toContain("@Bank");
@@ -762,6 +806,7 @@ describe("parse", () => {
 						"Cannot use category '&Food' directly; it has sub-categories",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 			expect(result.data.meta.categories).toContain("&Food:Groceries");
 			expect(result.data.meta.categories).not.toContain("&Food");
 			expect(result.data.meta.categoryGroups).toContain("&Food");
@@ -785,6 +830,7 @@ describe("parse", () => {
 						"Cannot use category '&Food' directly; it has sub-categories",
 				}),
 			);
+			expect(result.warnings).toEqual([]);
 			expect(result.data.meta.categories).toContain("&Food:Groceries");
 			expect(result.data.meta.categories).not.toContain("&Food");
 			expect(result.data.meta.categoryGroups).toContain("&Food");

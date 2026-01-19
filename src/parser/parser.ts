@@ -130,6 +130,14 @@ function registerCategory(p: Parser, ref: CategoryRef): void {
 	categories.add(raw);
 }
 
+function validateCategoryRef(p: Parser, ref: CategoryRef): void {
+	const { categoryGroups } = p.data.meta;
+
+	if (categoryGroups.has(ref.raw)) {
+		p.errors.push(trunkEntityError(ref.span, "category", ref.raw));
+	}
+}
+
 export function createParser(source: string): Parser {
 	return {
 		source,
@@ -674,6 +682,7 @@ function parseTarget(p: Parser): Target | null {
 	if (ch === "&") {
 		const ref = parseCategoryRef(p);
 		if (ref) {
+			validateCategoryRef(p, ref);
 			return { kind: "category", ref };
 		}
 		return null;
@@ -688,6 +697,9 @@ function parseTarget(p: Parser): Target | null {
 		let category: CategoryRef | null = null;
 		if (peek(p) === "&") {
 			category = parseCategoryRef(p);
+			if (category) {
+				validateCategoryRef(p, category);
+			}
 		}
 
 		return { kind: "account", ref, category };
