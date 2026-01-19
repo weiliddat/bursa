@@ -71,6 +71,29 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Streamline trunk entity and ancestor validation
 - [x] Preprocess untracked patterns for O(1) lookup
 
+### Phase 1.8 Correctness & Consistency
+
+**Correctness Bugs:**
+- [ ] Fix untracked transfer direction — only require category for outbound (`-`) transfers
+- [ ] Fix assertion sign handling — apply `amount.sign` when comparing balances
+- [ ] Fix UnbudgetedCategoryWarning — only warn on expenses (negative amounts)
+
+**Spec/Implementation Gaps:**
+- [ ] Enforce trunk category validation in LEDGER (register category refs during ledger parsing)
+- [x] Clarify category existence semantics — unknown category is warning (UnbudgetedCategoryWarning)
+- [x] Swap target sign — made optional in spec (v0.6.0)
+
+**Documentation:**
+- [x] Bump SPEC.md version (now v0.6.0)
+- [x] Update ARCHITECTURE.md to document full `Ledger.meta` shape
+- [ ] Clarify "O(1) untracked lookup" claim or implement proper O(1) lookup
+
+**Test Coverage:**
+- [ ] Add tests for untracked transfer direction (inbound vs outbound)
+- [ ] Add tests for assertions with negative values
+- [ ] Add tests for trunk category misuse in LEDGER
+- [ ] Add tests for Windows `\r\n` newline handling
+
 ---
 
 ## Future Milestones

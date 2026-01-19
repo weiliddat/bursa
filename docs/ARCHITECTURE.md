@@ -1,7 +1,7 @@
 # Bursa Architecture
 
-> Version: 0.7.0 (Draft)
-> Last Updated: 2026-01-03
+> Version: 0.8.0 (Draft)
+> Last Updated: 2026-01-19
 
 ## Overview
 
@@ -129,7 +129,12 @@ interface Ledger {
 	meta: {
 		commodities: Set<string>;
 		aliases: Map<string, string>;
+		symbols: string[]; // commodities + aliases, sorted by length desc for matching
 		untrackedPatterns: string[];
+		accounts: Set<string>; // leaf accounts
+		accountGroups: Set<string>; // trunk accounts (parents)
+		categories: Set<string>; // leaf categories
+		categoryGroups: Set<string>; // trunk categories (parents)
 	};
 	budget: BudgetEntry[];
 	ledger: LedgerEntry[];
@@ -292,3 +297,4 @@ Use `examples/example.bursa` as canonical fixture.
 | 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat               |
 | 0.6.0   | 2026-01-03 | Removed START section; opening balances are regular transactions |
 | 0.7.0   | 2026-01-03 | Simplified Design Principles and Validation (defer to SPEC.md)   |
+| 0.8.0   | 2026-01-19 | Documented full Ledger.meta shape (symbols, accounts, categories) |
