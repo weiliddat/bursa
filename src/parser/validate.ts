@@ -2,6 +2,7 @@ import {
 	assertionFailedWarning,
 	missingCategoryError,
 	nonChronologicalWarning,
+	trunkEntityError,
 	unbudgetedCategoryWarning,
 	unknownEntityError,
 	unverifiedEntryWarning,
@@ -58,8 +59,13 @@ function validateCommodities(p: Parser): void {
 }
 
 function validateLedger(p: Parser): void {
-	const { accounts, categories, categoryGroups, untrackedAccounts } =
-		p.data.meta;
+	const {
+		accounts,
+		accountGroups,
+		categories,
+		categoryGroups,
+		untrackedAccounts,
+	} = p.data.meta;
 
 	const balances = new Map<string, Map<string, number>>();
 	const accountDates = new Map<string, string>();
@@ -130,13 +136,17 @@ function validateLedger(p: Parser): void {
 			} else if (entry.target.kind === "account") {
 				const targetAccount = entry.target.ref.raw;
 
-				if (!accounts.has(targetAccount)) {
+				if (accountGroups.has(targetAccount)) {
+					p.errors.push(
+						trunkEntityError(entry.target.ref.span, "account", targetAccount),
+					);
+				} else if (!accounts.has(targetAccount)) {
 					p.errors.push(
 						unknownEntityError(entry.target.ref.span, "account", targetAccount),
 					);
 				}
 
-				if (untrackedAccounts.has(targetAccount)) {
+				if (sign < 0 && untrackedAccounts.has(targetAccount)) {
 					if (!entry.target.category) {
 						p.errors.push(missingCategoryError(entry.target.ref.span));
 					}

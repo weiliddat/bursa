@@ -89,6 +89,28 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Add tests for assertions with negative values
 - [x] Add tests for trunk category misuse in LEDGER
 - [x] Add tests for Windows `\r\n` newline handling
+- [ ] Unknown section name → InvalidSectionError
+  - Input: `>>> NOTES`
+  - Current: not tested
+  - Expected: `InvalidSectionError` with message `Unknown section 'NOTES'`
+- [x] Transfer inflow to untracked without category (should pass)
+  - Input: `+100 USD @Brokerage` where `@Brokerage` is untracked
+  - Fixed: only outflows require category
+- [x] Trunk account used as transfer target → TrunkEntityError
+  - Input: `-100 USD @Bank` where `@Bank:Savings` exists
+  - Fixed: now emits `TrunkEntityError` instead of `UnknownEntityError`
+- [ ] Multiple tags parsing
+  - Input: `2026-01-01 -50 USD &Food #groceries #weekly #bulk`
+  - Current: not tested
+  - Expected: `tags` array contains all three refs
+- [ ] Symbol overlap/longest-match
+  - Input: aliases `R = MYR` and `RM = MYR`, then `-RM50 &Food`
+  - Current: not tested
+  - Expected: matches `RM` (longer), not `R`
+- [ ] Duplicate alias definitions
+  - Input: `commodity: $ = USD` then `commodity: $ = EUR`
+  - Current: silently overwrites
+  - Expected: document behavior or warn
 
 ---
 

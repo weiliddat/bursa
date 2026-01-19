@@ -501,4 +501,44 @@ describe("validation", () => {
 			}),
 		);
 	});
+
+	it("allows inflow to untracked account without category", () => {
+		const source = dedent`
+			>>> META
+			commodity: USD
+			untracked: @Brokerage
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +100 USD @Brokerage
+
+			@Brokerage
+		`;
+		const result = parse(source);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).toEqual([]);
+	});
+
+	it("detects trunk account used as transfer target", () => {
+		const source = dedent`
+			>>> META
+			commodity: USD
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +1000 USD &Unassigned
+			  2026-01-02 -100 USD @Bank
+
+			@Bank:Savings
+			  2026-01-01 +500 USD &Unassigned
+		`;
+		const result = parse(source);
+		expect(result.errors).toContainEqual(
+			expect.objectContaining({
+				name: "TrunkEntityError",
+				message: "Cannot use account '@Bank' directly; it has sub-accounts",
+			}),
+		);
+		expect(result.warnings).toEqual([]);
+	});
 });
