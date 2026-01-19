@@ -82,7 +82,7 @@ describe("parse", () => {
 						e.kind === "transaction" &&
 						e.account.raw === "@Checking" &&
 						e.target.kind === "category" &&
-						e.target.ref.raw === "&Opening:Balance",
+						e.target.ref.raw === "&Unassigned",
 				);
 				expect(opening).toBeDefined();
 				if (opening?.kind === "transaction") {
@@ -158,7 +158,7 @@ describe("parse", () => {
 						e.kind === "transaction" &&
 						e.account.raw === "@Maybank" &&
 						e.target.kind === "category" &&
-						e.target.ref.raw === "&Opening:Balance",
+						e.target.ref.raw === "&Unassigned",
 				);
 				expect(maybankOpening).toBeDefined();
 				if (maybankOpening?.kind === "transaction") {

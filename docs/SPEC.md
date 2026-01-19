@@ -1,6 +1,6 @@
 # Bursa Language Specification
 
-> Version: 0.6.0 (Draft)
+> Version: 0.7.0 (Draft)
 > Last Updated: 2026-01-19
 
 ## 1. Core Philosophy
@@ -49,7 +49,7 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 | Prefix | Entity Type | Description                              | Examples                    |
 | ------ | ----------- | ---------------------------------------- | --------------------------- |
 | `@`    | Account     | Places where assets sit                  | `@Checking`, `@Visa`        |
-| `&`    | Category    | Budget categories (income/expense flows) | `&Groceries`, `&Job:Salary` |
+| `&`    | Category    | Budget envelopes                         | `&Groceries`, `&Unassigned` |
 | `#`    | Tag         | Metadata for search/grouping             | `#amazon`, `#project:q1`    |
 | (none) | Commodity   | Standard currencies or assets            | `USD`, `EUR`, `AAPL`        |
 
@@ -91,15 +91,17 @@ Entries are either a **transaction** (`AMOUNT TARGET ...`) or an **assertion** (
 
 | Type                  | Syntax                          | Description                         |
 | --------------------- | ------------------------------- | ----------------------------------- |
-| **Opening Balance**   | `+5000 $ &Opening:Balance`      | Initial account balance             |
-| **Expense**           | `-100 $ &Groceries`             | Spend from account to category      |
-| **Income**            | `+3000 $ &Job:Salary`           | Receive into account                |
+| **Opening Balance**   | `+5000 $ &Unassigned`           | Initial account balance             |
+| **Expense**           | `-100 $ &Groceries`             | Spend from account, drains category |
+| **Income**            | `+3000 $ &Unassigned #salary`   | Receive into account (tag source)   |
 | **Transfer Out**      | `-1000 $ @Savings`              | Move to another account             |
 | **Transfer In**       | `+1000 $ @Checking`             | Receive from another account        |
 | **Budgeted Transfer** | `-1000 $ @Brokerage &Investing` | Transfer to untracked with category |
 | **Swap**              | `-1000 $ 6.5 AAPL`              | Swap commodities within an account  |
 
-**Opening Balances** are regular transactions using a category (e.g., `&Opening:Balance`). For multiple commodities, use one transaction per commodity.
+**Opening Balances** use `&Unassigned` as the category. For multiple commodities, use one transaction per commodity.
+
+**Reserved Category:** `&Unassigned` is the income pool. All income flows into `&Unassigned`; BUDGET allocations draw from it. Use tags (e.g., `#salary`, `#dividends`) to track income sources.
 
 ### 3.5 Budgeting
 
@@ -110,8 +112,10 @@ Entries are either a **transaction** (`AMOUNT TARGET ...`) or an **assertion** (
   &Investing 1000 $
 ```
 
-- Categories fill via BUDGET allocations, drain via LEDGER transactions
-- **Rollover:** Implicit (Total Allocated - Total Spent)
+- `&Unassigned` fills via income transactions, drains via BUDGET allocations
+- Other categories fill via BUDGET allocations, drain via expense transactions
+- **Unassigned Balance:** `Σ(income to &Unassigned) − Σ(BUDGET allocations)`
+- **Rollover:** Implicit (Total Allocated − Total Spent)
 - Negative allocations reallocate between categories
 
 ## 4. Grammar (Informal)
@@ -147,7 +151,8 @@ target          = amount                     ; swap (second amount)
                 | category                   ; expense/income flow
                 | account category?          ; transfer (category for tracked→untracked)
 account         = "@" IDENTIFIER (":" IDENTIFIER)*
-category        = "&" IDENTIFIER (":" IDENTIFIER)*
+category        = UNASSIGNED | "&" IDENTIFIER (":" IDENTIFIER)*
+UNASSIGNED      = "&Unassigned"              ; reserved income pool
 tag             = "#" IDENTIFIER (":" IDENTIFIER)*
 comment         = ";" TEXT
 ```

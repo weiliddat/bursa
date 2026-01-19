@@ -212,7 +212,7 @@ describe("validation", () => {
 
 			>>> LEDGER
 			@Checking
-			  2026-01-01 +100 USD &Opening
+			  2026-01-01 +100 USD &Unassigned
 			  2026-01-02 == 200 USD
 		`;
 		const result = parse(source);
@@ -232,11 +232,11 @@ describe("validation", () => {
 
 			>>> BUDGET
 			2026-01
-			  &Opening 100 USD
+			  &Unassigned 100 USD
 
 			>>> LEDGER
 			@Checking
-			  2026-01-01 +100 USD &Opening
+			  2026-01-01 +100 USD &Unassigned
 			  ? 2026-01-02 == 200 USD
 		`;
 		const result = parse(source);
@@ -253,14 +253,14 @@ describe("validation", () => {
 
 			>>> BUDGET
 			2026-01
-			  &Opening 300 USD
+			  &Unassigned 300 USD
 
 			>>> LEDGER
 			@Bank
-			  2026-01-01 +100 USD &Opening
+			  2026-01-01 +100 USD &Unassigned
 
 			@Bank:Savings
-			  2026-01-01 +200 USD &Opening
+			  2026-01-01 +200 USD &Unassigned
 		`;
 		const result = parse(source);
 		expect(result.errors).toContainEqual(
@@ -279,11 +279,11 @@ describe("validation", () => {
 
 			>>> BUDGET
 			2026-01
-			  &Opening 1000 USD
+			  &Unassigned 1000 USD
 
 			>>> LEDGER
 			@Checking
-			  2026-01-01 +1000 USD &Opening
+			  2026-01-01 +1000 USD &Unassigned
 			  2026-01-02 -100 USD @Unknown
 		`;
 		const result = parse(source);
@@ -473,7 +473,7 @@ describe("validation", () => {
 
 			>>> LEDGER
 			@Checking
-			  ? 2026-01-01 +100 USD &Opening
+			  ? 2026-01-01 +100 USD &Unassigned
 		`;
 		const result = parse(source);
 		expect(result.errors).toEqual([]);

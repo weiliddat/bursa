@@ -1,6 +1,6 @@
 # Bursa Roadmap
 
-> Last Updated: 2026-01-16
+> Last Updated: 2026-01-19
 
 ## Milestone 1: Parser & Validation
 
@@ -73,9 +73,8 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 ### Phase 1.8 Correctness & Consistency
 
 **Correctness Bugs:**
-- [ ] Fix untracked transfer direction — only require category for outbound (`-`) transfers
+- [x] Redesigned income model — `&Unassigned` as reserved income pool (v0.7.0)
 - [ ] Fix assertion sign handling — apply `amount.sign` when comparing balances
-- [x] Fix UnbudgetedCategoryWarning — only warn on expenses (negative amounts)
 
 **Spec/Implementation Gaps:**
 - [x] Enforce trunk category validation in LEDGER (register category refs during ledger parsing)
@@ -83,11 +82,10 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Swap target sign — made optional in spec (v0.6.0)
 
 **Documentation:**
-- [x] Bump SPEC.md version (now v0.6.0)
+- [x] Bump SPEC.md version (now v0.7.0)
 - [x] Update ARCHITECTURE.md to document full `Ledger.meta` shape
 
 **Test Coverage:**
-- [ ] Add tests for untracked transfer direction (inbound vs outbound)
 - [ ] Add tests for assertions with negative values
 - [ ] Add tests for trunk category misuse in LEDGER
 - [ ] Add tests for Windows `\r\n` newline handling

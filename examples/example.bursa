@@ -16,18 +16,18 @@ untracked: @Brokerage ; exclude from budget tracking
 
 >>> LEDGER ; transactions
 @Checking ; primary account
-  2026-01-01 +5000 $ &Opening:Balance
+  2026-01-01 +5000 $ &Unassigned #opening
 @Maybank
-  2026-01-01 +RM1200 &Opening:Balance
+  2026-01-01 +RM1200 &Unassigned #opening
 @Brokerage
-  2026-01-01 +1000 $ &Opening:Balance
-  2026-01-01 +500 € &Opening:Balance
-  2026-01-01 +50 AAPL &Opening:Balance
-  2026-01-01 +0.25 BTC &Opening:Balance
+  2026-01-01 +1000 $ &Unassigned #opening
+  2026-01-01 +500 € &Unassigned #opening
+  2026-01-01 +50 AAPL &Unassigned #opening
+  2026-01-01 +0.25 BTC &Unassigned #opening
 
 ; === 2026 Transactions ===
 @Checking
-  2026-01-15 +$3000 &Job:Salary              ; payday
+  2026-01-15 +$3000 &Unassigned #salary      ; payday
   2026-01-16 -$100 &Groceries #traderjoes    ; weekly groceries
   2026-01-20 -$1000 @Brokerage &Investing    ; transfer to investment account
   2026-01-25 -$100 @Maybank                  ; cross-currency transfer
