@@ -57,24 +57,8 @@ function validateCommodities(p: Parser): void {
 	}
 }
 
-function isUntracked(account: string, patterns: string[]): boolean {
-	// account is like "@Brokerage:Stocks"
-	// pattern can be "@Brokerage" (exact) or "@Brokerage:*" (wildcard for children)
-
-	for (const pattern of patterns) {
-		if (pattern === account) return true;
-		if (pattern.endsWith(":*")) {
-			const prefix = pattern.slice(0, -2);
-			if (account.startsWith(`${prefix}:`) || account === prefix) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 function validateLedger(p: Parser): void {
-	const { accounts, categories } = p.data.meta;
+	const { accounts, categories, untrackedAccounts } = p.data.meta;
 
 	const balances = new Map<string, Map<string, number>>();
 	const accountDates = new Map<string, string>();
@@ -147,7 +131,7 @@ function validateLedger(p: Parser): void {
 					);
 				}
 
-				if (isUntracked(targetAccount, p.data.meta.untrackedPatterns)) {
+				if (untrackedAccounts.has(targetAccount)) {
 					if (!entry.target.category) {
 						p.errors.push(missingCategoryError(entry.target.ref.span));
 					}

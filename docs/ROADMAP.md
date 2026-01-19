@@ -69,7 +69,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 
 - [x] Replace `result += advance(p)` loops with slice-based extraction
 - [x] Streamline trunk entity and ancestor validation
-- [x] Preprocess untracked patterns for O(1) lookup
+- [x] Precompute untracked accounts during parsing for O(1) validation lookup
 
 ### Phase 1.8 Correctness & Consistency
 
@@ -86,7 +86,6 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 **Documentation:**
 - [x] Bump SPEC.md version (now v0.6.0)
 - [x] Update ARCHITECTURE.md to document full `Ledger.meta` shape
-- [ ] Clarify "O(1) untracked lookup" claim or implement proper O(1) lookup
 
 **Test Coverage:**
 - [ ] Add tests for untracked transfer direction (inbound vs outbound)

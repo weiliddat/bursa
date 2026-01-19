@@ -41,6 +41,7 @@ export function createLedger(): Ledger {
 			commodities: new Set<string>(),
 			aliases: new Map<string, string>(),
 			untrackedPatterns: [],
+			untrackedAccounts: new Set<string>(),
 			symbols: [],
 			accounts: new Set<string>(),
 			accountGroups: new Set<string>(),
@@ -68,6 +69,19 @@ function getPrefixes(path: string): string[] {
 	return prefixes;
 }
 
+function isUntracked(account: string, patterns: string[]): boolean {
+	for (const pattern of patterns) {
+		if (pattern === account) return true;
+		if (pattern.endsWith(":*")) {
+			const prefix = pattern.slice(0, -2);
+			if (account.startsWith(`${prefix}:`) || account === prefix) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 function registerAccount(p: Parser, ref: AccountRef): void {
 	const { accounts, accountGroups: accountTrunks } = p.data.meta;
 	const raw = ref.raw;
@@ -88,6 +102,10 @@ function registerAccount(p: Parser, ref: AccountRef): void {
 	}
 
 	accounts.add(raw);
+
+	if (isUntracked(raw, p.data.meta.untrackedPatterns)) {
+		p.data.meta.untrackedAccounts.add(raw);
+	}
 }
 
 function registerCategory(p: Parser, ref: CategoryRef): void {

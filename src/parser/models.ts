@@ -73,8 +73,10 @@ export interface Ledger {
 		// list of all aliases and commodities, sorted in desc length for matching
 		symbols: string[];
 
-		// untracked accounts, e.g. @Investments:BrokerageAccount or @Investments:*
+		// untracked patterns, e.g. @Investments or @Investments:*
 		untrackedPatterns: string[];
+		// set of accounts matching untracked patterns (computed during parsing)
+		untrackedAccounts: Set<string>;
 
 		// set of all "leaf" accounts for validation
 		accounts: Set<string>;
