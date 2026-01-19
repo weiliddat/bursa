@@ -65,27 +65,11 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Combine commodity and alias directives, can define $ = USD, RM = MYR in one go
 - [ ] Review and benchmark parser performance
 
-### Phase 1.7 Performance Optimizations (TODO)
-
-**Parser string concatenation (O(n²) potential):**
+### Phase 1.7 Performance Optimizations
 
 - [x] Replace `result += advance(p)` loops with slice-based extraction
-
-**Validation trunk/ancestor computations (O(k²) per path):**
-
-- [ ] Rewrite `collectTrunkEntities()` to build prefixes incrementally
-  - Current: `parts.slice(0,i).join(":")` in a loop
-  - Fix: `let prefix = parts[0]; for i=1..len-1 { trunks.add(prefix); prefix += ":" + parts[i]; }`
-
-- [ ] Memoize or precompute `hasBudgetedAncestor()` results
-  - Current: does `split`, then `slice().join()` for each ancestor level per call
-  - Options: (a) memoize by category string, (b) precompute "budget prefix set" and do single prefix-walk per unique category
-
-**Validation `isUntracked()` preprocessing:**
-
-- [ ] Preprocess `untrackedPatterns` into exact-match Set + wildcard prefix list
-  - Current: re-walks raw patterns for every transaction
-  - Fix: separate exact patterns into `Set`, wildcard patterns (`:*`) into prefix list; check becomes O(1) + O(P_wildcard)
+- [x] Streamline trunk entity and ancestor validation
+- [x] Preprocess untracked patterns for O(1) lookup
 
 ---
 
