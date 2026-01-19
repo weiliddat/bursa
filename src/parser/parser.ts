@@ -162,6 +162,13 @@ export function advance(p: Parser): string {
 	if (ch === "\n") {
 		p.line++;
 		p.col = 1;
+	} else if (ch === "\r") {
+		// Standalone CR or CRLF both start a new line
+		// For CRLF, the following \n will also increment, so we skip here
+		if (p.source[p.pos + 1] !== "\n") {
+			p.line++;
+			p.col = 1;
+		}
 	} else if (ch !== "") {
 		p.col++;
 	}
@@ -176,7 +183,7 @@ export function atEnd(p: Parser): boolean {
 export function skipHorizontalWhitespace(p: Parser): void {
 	while (!atEnd(p)) {
 		const ch = peek(p);
-		if (ch === " " || ch === "\t") {
+		if (ch === " " || ch === "\t" || ch === "\r") {
 			advance(p);
 		} else {
 			break;
@@ -185,10 +192,10 @@ export function skipHorizontalWhitespace(p: Parser): void {
 }
 
 export function skipLine(p: Parser): void {
-	while (!atEnd(p) && peek(p) !== "\n") {
+	while (!atEnd(p) && peek(p) !== "\n" && peek(p) !== "\r") {
 		advance(p);
 	}
-	if (peek(p) === "\n") {
+	if (peek(p) === "\r" || peek(p) === "\n") {
 		advance(p);
 	}
 }
@@ -201,7 +208,7 @@ export function skipBlankLines(p: Parser): void {
 
 		skipHorizontalWhitespace(p);
 
-		if (peek(p) === "\n") {
+		if (peek(p) === "\r" || peek(p) === "\n") {
 			advance(p);
 		} else {
 			p.pos = savedPos;
@@ -746,7 +753,7 @@ function parseComment(p: Parser): string | null {
 	skipHorizontalWhitespace(p);
 
 	const start = p.pos;
-	while (!atEnd(p) && peek(p) !== "\n") {
+	while (!atEnd(p) && peek(p) !== "\n" && peek(p) !== "\r") {
 		advance(p);
 	}
 	const result = p.source.slice(start, p.pos).trim();

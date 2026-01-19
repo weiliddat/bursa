@@ -861,4 +861,49 @@ describe("parse", () => {
 			expect(result.data.meta.categories).toContain("&Income");
 		});
 	});
+
+	describe("CRLF line endings", () => {
+		it("parses file with CRLF line endings", () => {
+			const source =
+				">>> META\r\n" +
+				"commodity: $ = USD\r\n" +
+				"\r\n" +
+				">>> BUDGET\r\n" +
+				"2025-01\r\n" +
+				"&Food $100\r\n" +
+				"\r\n" +
+				">>> LEDGER\r\n" +
+				"@Checking\r\n" +
+				"2025-01-01 -$50 &Food #groceries\r\n";
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
+			expect(result.data.meta.commodities).toContain("USD");
+			expect(result.data.ledger).toHaveLength(1);
+		});
+
+		it("tracks line numbers correctly with CRLF", () => {
+			const source = ">>> META\r\n" + "invalid directive\r\n";
+			const result = parse(source);
+			expect(result.errors).toHaveLength(1);
+			expect(result.errors[0].span.start.line).toBe(2);
+			expect(result.warnings).toEqual([]);
+		});
+
+		it("parses file with standalone CR (old Mac style)", () => {
+			const source = ">>> META\r" + "commodity: USD\r" + "\r" + ">>> LEDGER\r";
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
+			expect(result.data.meta.commodities).toContain("USD");
+		});
+
+		it("tracks line numbers correctly with CR", () => {
+			const source = ">>> META\r" + "invalid directive\r";
+			const result = parse(source);
+			expect(result.errors).toHaveLength(1);
+			expect(result.errors[0].span.start.line).toBe(2);
+			expect(result.warnings).toEqual([]);
+		});
+	});
 });

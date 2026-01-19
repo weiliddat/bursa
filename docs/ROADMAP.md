@@ -86,9 +86,9 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Update ARCHITECTURE.md to document full `Ledger.meta` shape
 
 **Test Coverage:**
-- [ ] Add tests for assertions with negative values
-- [ ] Add tests for trunk category misuse in LEDGER
-- [ ] Add tests for Windows `\r\n` newline handling
+- [x] Add tests for assertions with negative values
+- [x] Add tests for trunk category misuse in LEDGER
+- [x] Add tests for Windows `\r\n` newline handling
 
 ---
 
