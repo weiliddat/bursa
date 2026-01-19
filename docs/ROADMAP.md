@@ -63,7 +63,6 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Commodity aliases
 - [x] Cache sorted symbols for `matchSymbol()` in `p.data.meta.symbols`
 - [x] Combine commodity and alias directives, can define $ = USD, RM = MYR in one go
-- [ ] Review and benchmark parser performance
 
 ### Phase 1.7 Performance Optimizations
 

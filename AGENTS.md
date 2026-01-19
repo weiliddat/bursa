@@ -4,41 +4,9 @@ Bursa is a minimalistic plain-text personal finance tool with implicit double-en
 
 ## Project Structure
 
-```
-bursa/
-├── docs/
-│   ├── SPEC.md          # Language specification (source of truth)
-│   ├── ARCHITECTURE.md  # System design & parser architecture
-│   └── ROADMAP.md       # Implementation plan & progress
-├── examples/
-│   └── example.bursa    # Canonical test fixture
-├── src/
-│   ├── parser/          # Fused single-pass parser
-│   ├── domain/          # Balance computation, budgets
-│   └── ui/              # SolidJS components
-└── ...
-```
-
-## Code Conventions
-
-- **Language:** TypeScript with strict mode
-- **Framework:** SolidJS for UI, hand-written parser (no generators)
-- **Testing:** Vitest
-- **Formatting:** Biome (tabs, double quotes)
-- **File naming:** kebab-case for files, PascalCase for components
-
-## Testing Approach
-
-- Test-driven development for the parser
-- Tests live alongside code: `foo.ts` → `foo.test.ts`
-- Use `examples/example.bursa` as the canonical test fixture
-
-## Documentation
-
-- `docs/SPEC.md` is the source of truth for syntax
-- `docs/ARCHITECTURE.md` defines system design and AST structures
-- Update `docs/ROADMAP.md` when completing tasks
-- Update this file when adding new commands or conventions
+- `docs/` — SPEC.md (source of truth), ARCHITECTURE.md, ROADMAP.md
+- `examples/example.bursa` — canonical test fixture
+- `src/` — parser/, domain/, ui/
 
 ## Commands
 
@@ -60,4 +28,5 @@ This applies equally to code, documentation, examples, and tests. Each should be
 2. Update all three files to maintain consistency
 3. Bump version numbers in changelogs when making substantive changes
 4. Update `docs/ROADMAP.md` for any progress or roadmap changes
-5. Rerun tests and linters when making code changes
+5. Add tests when changing code, where the cases should reflect the feature that you're working on
+6. Rerun tests and linters when making code changes
