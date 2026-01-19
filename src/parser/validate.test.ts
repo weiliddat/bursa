@@ -83,6 +83,20 @@ describe("validation", () => {
 		);
 	});
 
+	it("no warning for income to unbudgeted category", () => {
+		const source = dedent`
+			>>> META
+			commodity: USD
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 1000 USD &Salary
+		`;
+		const result = parse(source);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).toEqual([]);
+	});
+
 	it("no warning when expense categories are all leaves", () => {
 		const source = dedent`
 			>>> META

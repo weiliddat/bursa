@@ -75,7 +75,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 **Correctness Bugs:**
 - [ ] Fix untracked transfer direction — only require category for outbound (`-`) transfers
 - [ ] Fix assertion sign handling — apply `amount.sign` when comparing balances
-- [ ] Fix UnbudgetedCategoryWarning — only warn on expenses (negative amounts)
+- [x] Fix UnbudgetedCategoryWarning — only warn on expenses (negative amounts)
 
 **Spec/Implementation Gaps:**
 - [x] Enforce trunk category validation in LEDGER (register category refs during ledger parsing)

@@ -116,7 +116,11 @@ function validateLedger(p: Parser): void {
 
 			if (entry.target.kind === "category") {
 				const catRaw = entry.target.ref.raw;
-				if (!categories.has(catRaw) && !categoryGroups.has(catRaw)) {
+				if (
+					sign < 0 &&
+					!categories.has(catRaw) &&
+					!categoryGroups.has(catRaw)
+				) {
 					p.warnings.push(
 						unbudgetedCategoryWarning(entry.target.ref.span, catRaw),
 					);
@@ -138,7 +142,11 @@ function validateLedger(p: Parser): void {
 
 				if (entry.target.category) {
 					const catRaw = entry.target.category.raw;
-					if (!categories.has(catRaw) && !categoryGroups.has(catRaw)) {
+					if (
+						sign < 0 &&
+						!categories.has(catRaw) &&
+						!categoryGroups.has(catRaw)
+					) {
 						p.warnings.push(
 							unbudgetedCategoryWarning(entry.target.category.span, catRaw),
 						);
