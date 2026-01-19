@@ -225,6 +225,23 @@ describe("validation", () => {
 		);
 	});
 
+	it("handles assertion with negative expected value", () => {
+		const source = dedent`
+			>>> META
+			commodity: USD
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 -100 USD &Unassigned
+			  2026-01-02 == -100 USD
+		`;
+		const result = parse(source);
+		expect(result.errors).toEqual([]);
+		expect(result.warnings).not.toContainEqual(
+			expect.objectContaining({ name: "AssertionFailedWarning" }),
+		);
+	});
+
 	it("ignores unverified assertion failure", () => {
 		const source = dedent`
 			>>> META

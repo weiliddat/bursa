@@ -74,7 +74,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 
 **Correctness Bugs:**
 - [x] Redesigned income model — `&Unassigned` as reserved income pool (v0.7.0)
-- [ ] Fix assertion sign handling — apply `amount.sign` when comparing balances
+- [x] Fix assertion sign handling — apply `amount.sign` when comparing balances
 
 **Spec/Implementation Gaps:**
 - [x] Enforce trunk category validation in LEDGER (register category refs during ledger parsing)

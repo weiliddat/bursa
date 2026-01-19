@@ -95,12 +95,14 @@ function validateLedger(p: Parser): void {
 			if (entry.unverified) continue;
 
 			const current = getBalance(accountName, entry.amount.commodity);
-			const diff = Math.abs(current - entry.amount.value);
+			const sign = entry.amount.sign === "-" ? -1 : 1;
+			const expected = entry.amount.value * sign;
+			const diff = Math.abs(current - expected);
 			if (diff > 0.000001) {
 				p.warnings.push(
 					assertionFailedWarning(
 						entry.span,
-						`${entry.amount.value} ${entry.amount.commodity}`,
+						`${expected} ${entry.amount.commodity}`,
 						`${current} ${entry.amount.commodity}`,
 					),
 				);
