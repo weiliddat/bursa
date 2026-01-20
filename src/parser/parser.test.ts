@@ -886,6 +886,39 @@ describe("parse", () => {
 		});
 	});
 
+	describe("symbol overlap / longest-match", () => {
+		it("matches longer symbol when alias and commodity overlap", () => {
+			const source = dedent`
+				>>> META
+				commodity: R = MYR
+				commodity: RM
+
+				>>> BUDGET
+				2026-01
+				  &Food 100 MYR
+				  &Income 100 RM
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 -RM50 &Food
+				  2026-01-02 +R100 &Income
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
+
+			const budgets = result.data.budget;
+			expect(budgets).toHaveLength(2);
+			expect(budgets[0].amount).toMatchObject({ commodity: "MYR", value: 100 });
+			expect(budgets[1].amount).toMatchObject({ commodity: "RM", value: 100 });
+
+			const entries = result.data.ledger.filter((e) => e.kind === "transaction");
+			expect(entries).toHaveLength(2);
+			expect(entries[0].amount).toMatchObject({ commodity: "RM", value: 50 });
+			expect(entries[1].amount).toMatchObject({ commodity: "MYR", value: 100 });
+		});
+	});
+
 	describe("CRLF line endings", () => {
 		it("parses file with CRLF line endings", () => {
 			const source =

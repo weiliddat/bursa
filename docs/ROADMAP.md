@@ -99,9 +99,9 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
   - Input: `2026-01-01 -50 USD &Food #groceries #weekly #bulk`
   - Tested in `parser.test.ts`
   - Expected: `tags` array contains all three refs
-- [ ] Symbol overlap/longest-match
+- [x] Symbol overlap/longest-match
   - Input: aliases `R = MYR` and `RM = MYR`, then `-RM50 &Food`
-  - Current: not tested
+  - Current: tested, matches `RM` (longer)
   - Expected: matches `RM` (longer), not `R`
 - [ ] Duplicate alias definitions
   - Input: `commodity: $ = USD` then `commodity: $ = EUR`
