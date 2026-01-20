@@ -1,5 +1,6 @@
 import {
 	type Diagnostic,
+	duplicateSymbolWarning,
 	invalidDirectiveError,
 	invalidEntryError,
 	invalidSectionError,
@@ -349,6 +350,15 @@ function parseMetaDirective(p: Parser): void {
 			skipHorizontalWhitespace(p);
 			const commodity = parseIdentifier(p);
 			if (commodity) {
+				if (p.data.meta.aliases.has(first)) {
+					p.warnings.push(
+						duplicateSymbolWarning(spanFrom(p, start), first, "alias"),
+					);
+				} else if (p.data.meta.commodities.has(first)) {
+					p.warnings.push(
+						duplicateSymbolWarning(spanFrom(p, start), first, "commodity"),
+					);
+				}
 				p.data.meta.aliases.set(first, commodity);
 				p.data.meta.commodities.add(commodity);
 			} else {
@@ -358,6 +368,11 @@ function parseMetaDirective(p: Parser): void {
 			}
 		} else {
 			// Plain commodity: "commodity: AAPL" or "commodity: $"
+			if (p.data.meta.aliases.has(first)) {
+				p.warnings.push(
+					duplicateSymbolWarning(spanFrom(p, start), first, "alias"),
+				);
+			}
 			p.data.meta.commodities.add(first);
 		}
 	} else if (keyword === "untracked") {

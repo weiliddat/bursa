@@ -171,6 +171,7 @@ comment         = ";" TEXT
 | `AssertionFailedWarning`    | Warning    | Balance assertion does not match computed balance   |
 | `NonChronologicalWarning`   | Warning    | Dates within account block are out of order         |
 | `UnbudgetedCategoryWarning` | Warning    | Expense category not allocated in BUDGET            |
+| `DuplicateSymbolWarning`    | Warning    | Symbol already defined as alias or commodity        |
 
 ---
 
@@ -237,3 +238,4 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 | 0.5.0   | 2026-01-17 | Aliases accept any string; prefix/suffix symbols support both aliases and commodities         |
 | 0.5.1   | 2026-01-17 | Combined alias and commodity directives into single `commodity:` directive                    |
 | 0.6.0   | 2026-01-19 | Swap target sign optional; unknown category is warning not error                              |
+| 0.7.0   | 2026-01-20 | Added DuplicateSymbolWarning for alias/commodity conflicts                                    |

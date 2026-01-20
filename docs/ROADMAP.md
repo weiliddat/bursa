@@ -103,10 +103,11 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
   - Input: aliases `R = MYR` and `RM = MYR`, then `-RM50 &Food`
   - Current: tested, matches `RM` (longer)
   - Expected: matches `RM` (longer), not `R`
-- [ ] Duplicate alias definitions
+- [x] Duplicate symbol definitions
   - Input: `commodity: $ = USD` then `commodity: $ = EUR`
-  - Current: silently overwrites
-  - Expected: document behavior or warn
+  - Current: emits `DuplicateSymbolWarning`, last definition wins
+  - Also warns for alias/commodity conflicts (e.g., `commodity: $` then `commodity: $ = USD`)
+  - Tested in `parser.test.ts`
 
 ---
 

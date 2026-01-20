@@ -919,6 +919,59 @@ describe("parse", () => {
 		});
 	});
 
+	describe("duplicate symbol definitions", () => {
+		it("warns when alias is redefined", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				commodity: $ = EUR
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toContainEqual(
+				expect.objectContaining({
+					name: "DuplicateSymbolWarning",
+					message: "Symbol '$' already defined as an alias",
+				}),
+			);
+			expect(result.data.meta.aliases.get("$")).toBe("EUR");
+			expect(result.data.meta.commodities).toContain("USD");
+			expect(result.data.meta.commodities).toContain("EUR");
+		});
+
+		it("warns when alias conflicts with existing commodity", () => {
+			const source = dedent`
+				>>> META
+				commodity: $
+				commodity: $ = USD
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toContainEqual(
+				expect.objectContaining({
+					name: "DuplicateSymbolWarning",
+					message: "Symbol '$' already defined as a commodity",
+				}),
+			);
+		});
+
+		it("warns when commodity conflicts with existing alias", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				commodity: $
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toContainEqual(
+				expect.objectContaining({
+					name: "DuplicateSymbolWarning",
+					message: "Symbol '$' already defined as an alias",
+				}),
+			);
+		});
+	});
+
 	describe("CRLF line endings", () => {
 		it("parses file with CRLF line endings", () => {
 			const source =

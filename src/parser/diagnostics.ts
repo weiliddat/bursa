@@ -117,3 +117,16 @@ export function unbudgetedCategoryWarning(
 		span,
 	};
 }
+
+export function duplicateSymbolWarning(
+	span: Span,
+	symbol: string,
+	context: "alias" | "commodity",
+): Diagnostic {
+	return {
+		name: "DuplicateSymbolWarning",
+		message: `Symbol '${symbol}' already defined as ${context === "alias" ? "an alias" : "a commodity"}`,
+		severity: "warning",
+		span,
+	};
+}
