@@ -862,6 +862,30 @@ describe("parse", () => {
 		});
 	});
 
+	describe("multiple tags", () => {
+		it("parses transaction with multiple tags", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+
+				>>> LEDGER
+				@Checking
+				2026-01-01 -$50 &Food #groceries #weekly #bulk
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+
+			const tx = result.data.ledger[0];
+			expect(tx?.kind).toBe("transaction");
+			if (tx?.kind === "transaction") {
+				expect(tx.tags).toHaveLength(3);
+				expect(tx.tags[0].raw).toBe("#groceries");
+				expect(tx.tags[1].raw).toBe("#weekly");
+				expect(tx.tags[2].raw).toBe("#bulk");
+			}
+		});
+	});
+
 	describe("CRLF line endings", () => {
 		it("parses file with CRLF line endings", () => {
 			const source =
