@@ -123,6 +123,7 @@ function validateLedger(p: Parser): void {
 			updateBalance(accountName, entry.amount.commodity, amountVal);
 
 			if (entry.target.kind === "category") {
+				// Trunk category validation done in parser via validateCategoryRef
 				const catRaw = entry.target.ref.raw;
 				if (
 					sign < 0 &&
@@ -153,6 +154,7 @@ function validateLedger(p: Parser): void {
 				}
 
 				if (entry.target.category) {
+					// Trunk category validation done in parser via validateCategoryRef
 					const catRaw = entry.target.category.raw;
 					if (
 						sign < 0 &&
