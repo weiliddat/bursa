@@ -90,24 +90,10 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Add tests for trunk category misuse in LEDGER
 - [x] Add tests for Windows `\r\n` newline handling
 - [x] Transfer inflow to untracked without category (should pass)
-  - Input: `+100 USD @Brokerage` where `@Brokerage` is untracked
-  - Fixed: only outflows require category
 - [x] Trunk account used as transfer target → TrunkEntityError
-  - Input: `-100 USD @Bank` where `@Bank:Savings` exists
-  - Fixed: now emits `TrunkEntityError` instead of `UnknownEntityError`
 - [x] Multiple tags parsing
-  - Input: `2026-01-01 -50 USD &Food #groceries #weekly #bulk`
-  - Tested in `parser.test.ts`
-  - Expected: `tags` array contains all three refs
 - [x] Symbol overlap/longest-match
-  - Input: aliases `R = MYR` and `RM = MYR`, then `-RM50 &Food`
-  - Current: tested, matches `RM` (longer)
-  - Expected: matches `RM` (longer), not `R`
 - [x] Duplicate symbol definitions
-  - Input: `commodity: $ = USD` then `commodity: $ = EUR`
-  - Current: emits `DuplicateSymbolWarning`, last definition wins
-  - Also warns for alias/commodity conflicts (e.g., `commodity: $` then `commodity: $ = USD`)
-  - Tested in `parser.test.ts`
 
 ---
 
