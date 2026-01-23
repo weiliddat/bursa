@@ -292,12 +292,12 @@ Use `examples/example.bursa` as canonical fixture.
 
 ## Changelog
 
-| Version | Date       | Changes                                                          |
-| ------- | ---------- | ---------------------------------------------------------------- |
-| 0.4.0   | 2026-01-02 | Fused single-pass parser, no lexer/AST                           |
-| 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat               |
-| 0.6.0   | 2026-01-03 | Removed START section; opening balances are regular transactions |
-| 0.7.0   | 2026-01-03 | Simplified Design Principles and Validation (defer to SPEC.md)   |
+| Version | Date       | Changes                                                           |
+| ------- | ---------- | ----------------------------------------------------------------- |
+| 0.4.0   | 2026-01-02 | Fused single-pass parser, no lexer/AST                            |
+| 0.5.0   | 2026-01-03 | Unified ledger: Opening+Transaction+Assertion flat                |
+| 0.6.0   | 2026-01-03 | Removed START section; opening balances are regular transactions  |
+| 0.7.0   | 2026-01-03 | Simplified Design Principles and Validation (defer to SPEC.md)    |
 | 0.8.0   | 2026-01-19 | Documented full Ledger.meta shape (symbols, accounts, categories) |
 | 0.8.1   | 2026-01-23 | Added untrackedAccounts to Ledger.meta                            |
 | 0.8.2   | 2026-01-23 | Documented symbol-driven amount dispatch                          |

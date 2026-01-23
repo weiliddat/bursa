@@ -28,7 +28,7 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 | **Comments**       | Any text following `;` is ignored                                        |
 | **Indentation**    | Optional; leading spaces/tabs are ignored                                |
 | **Aliases**        | Any string mapped to commodity in META (e.g., `$` → `USD`, `RM` → `MYR`) |
-| **Number Format**  | Declared symbols before OR after number (e.g., `$500` or `500 $`)         |
+| **Number Format**  | Declared symbols before OR after number (e.g., `$500` or `500 $`)        |
 | **Sign Placement** | Sign at very start (e.g., `-$500`, `-500 $`, `+RM50`)                    |
 
 ### 3.2 META Directives
@@ -46,12 +46,12 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 
 ### 3.3 Entities
 
-| Prefix | Entity Type | Description                              | Examples                    |
-| ------ | ----------- | ---------------------------------------- | --------------------------- |
-| `@`    | Account     | Places where assets sit                  | `@Checking`, `@Visa`        |
-| `&`    | Category    | Budget envelopes                         | `&Groceries`, `&Unassigned` |
-| `#`    | Tag         | Metadata for search/grouping             | `#amazon`, `#project:q1`    |
-| (none) | Commodity   | Standard currencies or assets            | `USD`, `EUR`, `AAPL`        |
+| Prefix | Entity Type | Description                   | Examples                    |
+| ------ | ----------- | ----------------------------- | --------------------------- |
+| `@`    | Account     | Places where assets sit       | `@Checking`, `@Visa`        |
+| `&`    | Category    | Budget envelopes              | `&Groceries`, `&Unassigned` |
+| `#`    | Tag         | Metadata for search/grouping  | `#amazon`, `#project:q1`    |
+| (none) | Commodity   | Standard currencies or assets | `USD`, `EUR`, `AAPL`        |
 
 Hierarchical naming uses `:` as separator. Parent totals aggregate child values.
 
@@ -239,4 +239,4 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 | 0.5.1   | 2026-01-17 | Combined alias and commodity directives into single `commodity:` directive                    |
 | 0.6.0   | 2026-01-19 | Swap target sign optional; unknown category is warning not error                              |
 | 0.7.0   | 2026-01-20 | Added DuplicateSymbolWarning for alias/commodity conflicts                                    |
-| 0.7.1   | 2026-01-23 | Clarified that declared symbols can start any amount token                                   |
+| 0.7.1   | 2026-01-23 | Clarified that declared symbols can start any amount token                                    |
