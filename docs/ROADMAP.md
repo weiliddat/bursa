@@ -1,6 +1,6 @@
 # Bursa Roadmap
 
-> Last Updated: 2026-01-19
+> Last Updated: 2026-01-23
 
 ## Milestone 1: Parser & Validation
 
@@ -94,6 +94,7 @@ Per SPEC.md §5, track implementation and test status for each diagnostic:
 - [x] Multiple tags parsing
 - [x] Symbol overlap/longest-match
 - [x] Duplicate symbol definitions
+- [x] Swap targets use declared symbols (remove hardcoded currency list)
 
 ---
 

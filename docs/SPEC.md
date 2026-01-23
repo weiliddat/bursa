@@ -1,7 +1,7 @@
 # Bursa Language Specification
 
-> Version: 0.7.0 (Draft)
-> Last Updated: 2026-01-19
+> Version: 0.7.1 (Draft)
+> Last Updated: 2026-01-23
 
 ## 1. Core Philosophy
 
@@ -28,7 +28,7 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 | **Comments**       | Any text following `;` is ignored                                        |
 | **Indentation**    | Optional; leading spaces/tabs are ignored                                |
 | **Aliases**        | Any string mapped to commodity in META (e.g., `$` → `USD`, `RM` → `MYR`) |
-| **Number Format**  | Currency symbols before OR after number (e.g., `$500` or `500 $`)        |
+| **Number Format**  | Declared symbols before OR after number (e.g., `$500` or `500 $`)         |
 | **Sign Placement** | Sign at very start (e.g., `-$500`, `-500 $`, `+RM50`)                    |
 
 ### 3.2 META Directives
@@ -41,7 +41,7 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 - All amounts require an explicit commodity (or its alias)
 - `commodity:` declares a commodity; optionally maps an alias to it (e.g., `$ = USD`)
 - Without alias: `commodity: AAPL` declares just the commodity
-- Defined aliases and commodities can be used as prefix symbols in amounts (e.g., `-RM50`, `-USD100`)
+- Defined aliases and commodities can be used as prefix/suffix symbols in any amount (e.g., `-RM50`, `-USD100`)
 - `untracked:` supports wildcards: `@Investments:*` matches all children
 
 ### 3.3 Entities
@@ -239,3 +239,4 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 | 0.5.1   | 2026-01-17 | Combined alias and commodity directives into single `commodity:` directive                    |
 | 0.6.0   | 2026-01-19 | Swap target sign optional; unknown category is warning not error                              |
 | 0.7.0   | 2026-01-20 | Added DuplicateSymbolWarning for alias/commodity conflicts                                    |
+| 0.7.1   | 2026-01-23 | Clarified that declared symbols can start any amount token                                   |

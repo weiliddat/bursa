@@ -1,7 +1,7 @@
 # Bursa Architecture
 
-> Version: 0.8.0 (Draft)
-> Last Updated: 2026-01-19
+> Version: 0.8.2 (Draft)
+> Last Updated: 2026-01-23
 
 ## Overview
 
@@ -114,7 +114,7 @@ Inside a line parser (e.g., within a ledger entry), LL(1) decisions use the **ne
 | ---------------- | ----------------------------------------- |
 | `+` / `-`        | Signed amount                             |
 | `0-9`            | Unsigned number (e.g., amount value/date) |
-| `$£€`…           | Amount with alias-leading symbol          |
+| `€` / `RM` / `$` | Amount with declared symbol               |
 | `@`              | Account ref                               |
 | `&`              | Category ref                              |
 | `#`              | Tag ref                                   |
@@ -131,6 +131,7 @@ interface Ledger {
 		aliases: Map<string, string>;
 		symbols: string[]; // commodities + aliases, sorted by length desc for matching
 		untrackedPatterns: string[];
+		untrackedAccounts: Set<string>; // accounts matching untracked patterns (computed)
 		accounts: Set<string>; // leaf accounts
 		accountGroups: Set<string>; // trunk accounts (parents)
 		categories: Set<string>; // leaf categories
@@ -298,3 +299,5 @@ Use `examples/example.bursa` as canonical fixture.
 | 0.6.0   | 2026-01-03 | Removed START section; opening balances are regular transactions |
 | 0.7.0   | 2026-01-03 | Simplified Design Principles and Validation (defer to SPEC.md)   |
 | 0.8.0   | 2026-01-19 | Documented full Ledger.meta shape (symbols, accounts, categories) |
+| 0.8.1   | 2026-01-23 | Added untrackedAccounts to Ledger.meta                            |
+| 0.8.2   | 2026-01-23 | Documented symbol-driven amount dispatch                          |

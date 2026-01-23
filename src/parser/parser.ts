@@ -280,6 +280,15 @@ function matchSymbol(p: Parser): string | null {
 	return null;
 }
 
+function isSymbolStart(p: Parser): boolean {
+	for (const symbol of p.data.meta.symbols) {
+		if (p.source.startsWith(symbol, p.pos)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 function parseHierarchicalName(p: Parser): string {
 	const start = p.pos;
 	scanIdentifier(p);
@@ -731,7 +740,7 @@ function parseTarget(p: Parser): Target | null {
 		ch === "+" ||
 		ch === "-" ||
 		/[0-9]/.test(ch) ||
-		"$€£¥₹₽₩₪฿".includes(ch)
+		isSymbolStart(p)
 	) {
 		const amount = parseAmount(p);
 		if (amount) {

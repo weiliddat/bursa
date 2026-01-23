@@ -214,6 +214,35 @@ describe("parse", () => {
 			expect(entries[8].amount).toMatchObject({ commodity: "USD", value: 25 });
 			expect(entries[9].amount).toMatchObject({ commodity: "AAPL", value: 10 });
 		});
+
+		it("parses swap target starting with symbol alias", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				commodity: € = EUR
+
+				>>> BUDGET
+				2026-01
+				  &Income 1000 $
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 -100 $ €90
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.warnings).toEqual([]);
+
+			const swap = result.data.ledger.find(
+				(entry) =>
+					entry.kind === "transaction" && entry.target.kind === "swap",
+			);
+			expect(swap).toBeDefined();
+			if (swap?.kind === "transaction" && swap.target.kind === "swap") {
+				expect(swap.amount).toMatchObject({ commodity: "USD", value: 100 });
+				expect(swap.target.amount).toMatchObject({ commodity: "EUR", value: 90 });
+			}
+		});
 	});
 
 	describe("syntax errors", () => {
@@ -967,6 +996,43 @@ describe("parse", () => {
 				expect.objectContaining({
 					name: "DuplicateSymbolWarning",
 					message: "Symbol '$' already defined as an alias",
+				}),
+			);
+		});
+	});
+
+	describe("sign placement", () => {
+		it("accepts sign before symbol (-$500)", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 -$500 &Food
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			const tx = result.data.ledger[0];
+			expect(tx?.kind).toBe("transaction");
+			if (tx?.kind === "transaction") {
+				expect(tx.amount).toMatchObject({ sign: "-", value: 500, commodity: "USD" });
+			}
+		});
+
+		it("rejects sign after symbol ($-500)", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 $-500 &Food
+			`;
+			const result = parse(source);
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "InvalidEntryError",
 				}),
 			);
 		});
