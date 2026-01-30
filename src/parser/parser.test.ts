@@ -1090,4 +1090,105 @@ describe("parse", () => {
 			expect(result.warnings).toEqual([]);
 		});
 	});
+
+	describe("unicode and emoji support", () => {
+		it("parses emoji account names", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				>>> BUDGET
+				2026-01
+				&🍕 500 $
+				>>> LEDGER
+				@💰Bank
+				2026-01-01 +1000 $ &Unassigned
+				2026-01-01 -50 $ &🍕
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.data.meta.accounts).toContain("@💰Bank");
+			expect(result.data.meta.categories).toContain("&🍕");
+		});
+
+		it("parses CJK characters in entity names", () => {
+			const source = dedent`
+				>>> META
+				commodity: ¥ = JPY
+				>>> BUDGET
+				2026-01
+				&食費 30000 ¥
+				>>> LEDGER
+				@銀行口座
+				2026-01-01 +100000 ¥ &Unassigned
+				2026-01-01 -5000 ¥ &食費
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.data.meta.accounts).toContain("@銀行口座");
+			expect(result.data.meta.categories).toContain("&食費");
+		});
+
+		it("parses hierarchical names with unicode", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				>>> BUDGET
+				2026-01
+				&日常:食費 500 $
+				>>> LEDGER
+				@銀行:普通預金
+				2026-01-01 +1000 $ &Unassigned
+				2026-01-01 -100 $ &日常:食費
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.data.meta.accounts).toContain("@銀行:普通預金");
+			expect(result.data.meta.accountGroups).toContain("@銀行");
+			expect(result.data.meta.categories).toContain("&日常:食費");
+			expect(result.data.meta.categoryGroups).toContain("&日常");
+		});
+
+		it("parses tags with unicode", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				>>> LEDGER
+				@Bank
+				2026-01-01 +1000 $ &Unassigned #給料 #会社名:ABC
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.data.ledger).toHaveLength(1);
+			const tx = result.data.ledger[0];
+			expect(tx?.kind).toBe("transaction");
+			if (tx?.kind === "transaction") {
+				expect(tx.tags).toHaveLength(2);
+				expect(tx.tags[0].raw).toBe("#給料");
+				expect(tx.tags[1].raw).toBe("#会社名:ABC");
+			}
+		});
+
+		it("parses mixed emoji and text", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				>>> LEDGER
+				@🏦MyBank
+				2026-01-01 +500 $ &Unassigned
+			`;
+			const result = parse(source);
+			expect(result.errors).toEqual([]);
+			expect(result.data.meta.accounts).toContain("@🏦MyBank");
+		});
+
+		it("tracks column positions correctly with multi-byte characters", () => {
+			const source = dedent`
+				>>> META
+				invalid 🍕
+			`;
+			const result = parse(source);
+			expect(result.errors).toHaveLength(1);
+			expect(result.errors[0].span.start.col).toBe(1);
+		});
+	});
 });

@@ -155,11 +155,16 @@ export function createParser(source: string): Parser {
 }
 
 export function peek(p: Parser): string {
-	return p.source[p.pos] ?? "";
+	const cp = p.source.codePointAt(p.pos);
+	if (cp === undefined) return "";
+	return String.fromCodePoint(cp);
 }
 
 export function advance(p: Parser): string {
-	const ch = p.source[p.pos] ?? "";
+	const cp = p.source.codePointAt(p.pos);
+	if (cp === undefined) return "";
+	const ch = String.fromCodePoint(cp);
+	const width = cp > 0xffff ? 2 : 1;
 	if (ch === "\n") {
 		p.line++;
 		p.col = 1;
@@ -170,10 +175,10 @@ export function advance(p: Parser): string {
 			p.line++;
 			p.col = 1;
 		}
-	} else if (ch !== "") {
+	} else {
 		p.col++;
 	}
-	p.pos++;
+	p.pos += width;
 	return ch;
 }
 
@@ -244,8 +249,30 @@ export function spanFrom(
 	};
 }
 
+const RESERVED_CHARS = new Set([
+	":",
+	"@",
+	"&",
+	"#",
+	";",
+	" ",
+	"\t",
+	"\n",
+	"\r",
+	"=",
+	"+",
+	"-",
+	".",
+	"?",
+	">",
+]);
+
+function isIdentifierChar(ch: string): boolean {
+	return ch !== "" && !RESERVED_CHARS.has(ch);
+}
+
 function scanIdentifier(p: Parser): void {
-	while (!atEnd(p) && /[a-zA-Z0-9_]/.test(peek(p))) {
+	while (!atEnd(p) && isIdentifierChar(peek(p))) {
 		advance(p);
 	}
 }
@@ -289,12 +316,18 @@ function isSymbolStart(p: Parser): boolean {
 	return false;
 }
 
+function peekNextCodepoint(p: Parser): string {
+	const cp = p.source.codePointAt(p.pos + 1);
+	if (cp === undefined) return "";
+	return String.fromCodePoint(cp);
+}
+
 function parseHierarchicalName(p: Parser): string {
 	const start = p.pos;
 	scanIdentifier(p);
 	while (peek(p) === ":") {
-		const nextChar = p.source[p.pos + 1] ?? "";
-		if (/[a-zA-Z0-9_]/.test(nextChar)) {
+		const nextChar = peekNextCodepoint(p);
+		if (isIdentifierChar(nextChar)) {
 			advance(p);
 			scanIdentifier(p);
 		} else {

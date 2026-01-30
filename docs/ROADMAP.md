@@ -1,6 +1,6 @@
 # Bursa Roadmap
 
-> Last Updated: 2026-01-23
+> Last Updated: 2026-01-30
 
 ## Milestone 1: Parser & Validation
 
@@ -127,3 +127,8 @@ Convert YNAB CSV exports (`plan.csv`, `register.csv`) to `.bursa` format via dir
 - [x] Standalone script runnable via node/deno/bun
 - [x] Output to stdout or file
 - [x] Validation pass on generated output (parse and check for errors)
+
+### Phase 2.5: Expand character support
+
+- [x] Unicode and emoji support in entity names (accounts, categories, tags, commodities)
+- [ ] Ensure YNAB converter also supports unicode/emojis when converting to .bursa format

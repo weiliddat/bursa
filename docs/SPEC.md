@@ -1,7 +1,7 @@
 # Bursa Language Specification
 
-> Version: 0.7.1 (Draft)
-> Last Updated: 2026-01-23
+> Version: 0.8.0 (Draft)
+> Last Updated: 2026-01-30
 
 ## 1. Core Philosophy
 
@@ -52,6 +52,8 @@ A single text file divided into sections using `>>> [SECTION_NAME]`.
 | `&`    | Category    | Budget envelopes              | `&Groceries`, `&Unassigned` |
 | `#`    | Tag         | Metadata for search/grouping  | `#amazon`, `#project:q1`    |
 | (none) | Commodity   | Standard currencies or assets | `USD`, `EUR`, `AAPL`        |
+
+**Entity names** support Unicode characters (including CJK, emoji, etc.). Reserved characters that cannot appear in names: `: @ & # ; + - . ? > =` and whitespace.
 
 Hierarchical naming uses `:` as separator. Parent totals aggregate child values.
 
@@ -240,3 +242,4 @@ Use `?` prefix for unverified entries. Remove once confirmed:
 | 0.6.0   | 2026-01-19 | Swap target sign optional; unknown category is warning not error                              |
 | 0.7.0   | 2026-01-20 | Added DuplicateSymbolWarning for alias/commodity conflicts                                    |
 | 0.7.1   | 2026-01-23 | Clarified that declared symbols can start any amount token                                    |
+| 0.8.0   | 2026-01-30 | Unicode/emoji support in entity names; exclusion-based identifier parsing                     |
