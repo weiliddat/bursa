@@ -102,28 +102,28 @@ Convert YNAB CSV exports (`plan.csv`, `register.csv`) to `.bursa` format via dir
 
 ### Phase 2.1: CSV Parser
 
-- [ ] Simple CSV parser (handles quoted strings and bare numbers)
-- [ ] Header validation for expected columns
-- [ ] Typed row accessors for plan and register schemas
+- [x] Simple CSV parser (handles quoted strings and bare numbers)
+- [x] Header validation for expected columns — validates exact header match, fails with clear error on mismatch
+- [x] Typed row accessors for plan and register schemas
 
 ### Phase 2.2: Data Extraction
 
-- [ ] Parse `plan.csv`: extract period, category hierarchy, assigned amounts
-- [ ] Parse `register.csv`: extract accounts, dates, amounts, categories, payees, memos
-- [ ] Deduplicate transfer pairs (YNAB exports both sides)
-- [ ] Map `Cleared: "Uncleared"` → unverified marker
+- [x] Parse `plan.csv`: extract period, category hierarchy, assigned amounts
+- [x] Parse `register.csv`: extract accounts, dates, amounts, categories, payees, memos
+- [x] Deduplicate transfer pairs (YNAB exports both sides)
+- [x] Map `Cleared: "Uncleared"` → unverified marker
 
 ### Phase 2.3: Bursa Generation
 
-- [ ] Generate META section (commodity from user input, derive untracked accounts)
-- [ ] Generate BUDGET section from plan data
-- [ ] Generate LEDGER section grouped by account, sorted by date
-- [ ] Handle target types: category, transfer, transfer+category
-- [ ] Preserve memos as comments
-- [ ] Tag payees as `#payee:[name]`
+- [x] Generate META section (commodity from user input, derive untracked accounts)
+- [x] Generate BUDGET section from plan data
+- [x] Generate LEDGER section grouped by account, sorted by date
+- [x] Handle target types: category, transfer, transfer+category
+- [x] Preserve memos as comments
+- [x] Tag payees as `#payee:[name]`
 
 ### Phase 2.4: Script & Integration
 
-- [ ] Standalone script runnable via node/deno/bun
-- [ ] Output to stdout or file
-- [ ] Validation pass on generated output (parse and check for errors)
+- [x] Standalone script runnable via node/deno/bun
+- [x] Output to stdout or file
+- [x] Validation pass on generated output (parse and check for errors)

@@ -234,13 +234,15 @@ describe("parse", () => {
 			expect(result.warnings).toEqual([]);
 
 			const swap = result.data.ledger.find(
-				(entry) =>
-					entry.kind === "transaction" && entry.target.kind === "swap",
+				(entry) => entry.kind === "transaction" && entry.target.kind === "swap",
 			);
 			expect(swap).toBeDefined();
 			if (swap?.kind === "transaction" && swap.target.kind === "swap") {
 				expect(swap.amount).toMatchObject({ commodity: "USD", value: 100 });
-				expect(swap.target.amount).toMatchObject({ commodity: "EUR", value: 90 });
+				expect(swap.target.amount).toMatchObject({
+					commodity: "EUR",
+					value: 90,
+				});
 			}
 		});
 	});
@@ -941,7 +943,9 @@ describe("parse", () => {
 			expect(budgets[0].amount).toMatchObject({ commodity: "MYR", value: 100 });
 			expect(budgets[1].amount).toMatchObject({ commodity: "RM", value: 100 });
 
-			const entries = result.data.ledger.filter((e) => e.kind === "transaction");
+			const entries = result.data.ledger.filter(
+				(e) => e.kind === "transaction",
+			);
 			expect(entries).toHaveLength(2);
 			expect(entries[0].amount).toMatchObject({ commodity: "RM", value: 50 });
 			expect(entries[1].amount).toMatchObject({ commodity: "MYR", value: 100 });
@@ -1016,7 +1020,11 @@ describe("parse", () => {
 			const tx = result.data.ledger[0];
 			expect(tx?.kind).toBe("transaction");
 			if (tx?.kind === "transaction") {
-				expect(tx.amount).toMatchObject({ sign: "-", value: 500, commodity: "USD" });
+				expect(tx.amount).toMatchObject({
+					sign: "-",
+					value: 500,
+					commodity: "USD",
+				});
 			}
 		});
 

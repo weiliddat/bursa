@@ -736,12 +736,7 @@ function parseTarget(p: Parser): Target | null {
 		return { kind: "account", ref, category };
 	}
 
-	if (
-		ch === "+" ||
-		ch === "-" ||
-		/[0-9]/.test(ch) ||
-		isSymbolStart(p)
-	) {
+	if (ch === "+" || ch === "-" || /[0-9]/.test(ch) || isSymbolStart(p)) {
 		const amount = parseAmount(p);
 		if (amount) {
 			return { kind: "swap", amount };
