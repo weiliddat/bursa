@@ -131,4 +131,4 @@ Convert YNAB CSV exports (`plan.csv`, `register.csv`) to `.bursa` format via dir
 ### Phase 2.5: Expand character support
 
 - [x] Unicode and emoji support in entity names (accounts, categories, tags, commodities)
-- [ ] Ensure YNAB converter also supports unicode/emojis when converting to .bursa format
+- [x] Ensure YNAB converter also supports unicode/emojis when converting to .bursa format

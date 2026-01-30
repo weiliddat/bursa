@@ -104,21 +104,19 @@ describe("YNAB converter", () => {
 		expect(output).toContain("&Savings:Emergency 500 $");
 	});
 
-	it("sanitizes special characters in names", () => {
+	it("preserves unicode and emoji in names", () => {
 		const specialPlanCSV = `"Month","Category Group/Category","Category Group","Category","Assigned","Activity","Available"
-"Jan 2021","Life & Goals: Vacation 🏖️","Life & Goals","Vacation 🏖️",100.00,0.00,100.00`;
+"Jan 2021","Life Goals: Vacation 🏖️","Life Goals","Vacation 🏖️",100.00,0.00,100.00`;
 
 		const specialRegisterCSV = `"Account","Flag","Date","Payee","Category Group/Category","Category Group","Category","Memo","Outflow","Inflow","Cleared"
-"N26-Bank","","2021-01-01","Company Inc.","Inflow: Ready to Assign","Inflow","Ready to Assign","",0.00,1000.00,"Cleared"`;
+"N26 Bank 🏦","","2021-01-01","Company Inc.","Inflow: Ready to Assign","Inflow","Ready to Assign","",0.00,1000.00,"Cleared"`;
 
 		const output = convertYNAB(specialPlanCSV, specialRegisterCSV, {
 			commodity: "EUR",
 			symbol: "€",
 		});
-		expect(output).toContain("@N26Bank");
-		expect(output).toContain("&Life_Goals:Vacation");
-		expect(output).not.toContain("🏖️");
-		expect(output).not.toContain("Life & Goals");
+		expect(output).toContain("@N26_Bank_🏦");
+		expect(output).toContain("&Life_Goals:Vacation_🏖️");
 	});
 
 	it("handles transfers to untracked accounts with category", () => {

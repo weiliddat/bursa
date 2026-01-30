@@ -146,10 +146,8 @@ function parseRegisterRow(headers: string[], values: string[]): RegisterRow {
 
 function sanitizeName(name: string): string {
 	return name
-		.replace(/[^\w\s]/g, "")
-		.replace(/\s+/g, " ")
-		.trim()
-		.replace(/ /g, "_")
+		.replace(/[:@&#;+\-.?>=]/g, "")
+		.replace(/\s+/g, "_")
 		.replace(/^_+|_+$/g, "");
 }
 
