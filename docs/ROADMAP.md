@@ -1,6 +1,6 @@
 # Bursa Roadmap
 
-> Last Updated: 2026-01-30
+> Last Updated: 2026-02-01
 
 ## Milestone 1: Parser & Validation
 
@@ -139,17 +139,17 @@ Build a web UI that takes the raw `.bursa` ledger as input and displays computed
 
 ### Phase 3.1: Foundation
 
-- [ ] Set up basic web UI scaffold (static HTML or lightweight framework)
-- [ ] Text editor pane for raw `.bursa` input
-- [ ] Parse on change and surface errors/warnings inline
+- [x] Set up basic web UI scaffold (SolidJS)
+- [x] Text editor pane for raw `.bursa` input (line-by-line inputs)
+- [x] Parse on change and surface errors/warnings inline
 
 ### Phase 3.2: Balance Engine & Views
 
 Single information-dense view of all account and category balances
 
-- [ ] Compute account balances per commodity (current + point-in-time)
-- [ ] Compute category balances (allocated − spent = available)
-- [ ] Compute &Unassigned balance (income − allocations)
+- [x] Compute account balances per commodity (current + point-in-time)
+- [x] Compute category balances (allocated − spent = available)
+- [x] Compute &Unassigned balance (income − allocations)
 
 Per-transaction balance tracking
 

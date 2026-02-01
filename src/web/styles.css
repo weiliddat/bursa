@@ -1,0 +1,164 @@
+* {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html,
+body {
+	height: 100%;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+#root {
+	height: 100%;
+}
+
+.container {
+	display: flex;
+	height: 100vh;
+	overflow: hidden;
+}
+
+.pane {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+}
+
+.ledger-pane {
+	flex: 1;
+	border-right: 1px solid #333;
+	min-width: 0;
+}
+
+.balances-pane {
+	flex: 0 0 320px;
+	background: #f5f5f5;
+}
+
+.pane-header {
+	padding: 8px 12px;
+	background: #222;
+	color: #fff;
+	font-weight: bold;
+	flex-shrink: 0;
+}
+
+.ledger-lines {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: auto;
+	background: #1a1a1a;
+}
+
+.ledger-line {
+	display: flex;
+	align-items: center;
+	white-space: nowrap;
+}
+
+.line-number {
+	flex-shrink: 0;
+	width: 48px;
+	padding: 4px 8px;
+	text-align: right;
+	color: #666;
+	background: #252525;
+	border-right: 1px solid #333;
+	user-select: none;
+}
+
+.line-input {
+	flex: 1;
+	min-width: 0;
+	padding: 4px 8px;
+	border: none;
+	background: transparent;
+	color: #e0e0e0;
+	font-family: inherit;
+	font-size: inherit;
+	outline: none;
+}
+
+.line-input:focus {
+	background: #2a2a2a;
+}
+
+.add-line-btn {
+	display: block;
+	width: 100%;
+	padding: 8px;
+	margin-top: 4px;
+	border: none;
+	background: #333;
+	color: #888;
+	font-family: inherit;
+	font-size: inherit;
+	cursor: pointer;
+	text-align: left;
+}
+
+.add-line-btn:hover {
+	background: #3a3a3a;
+	color: #aaa;
+}
+
+.diagnostics {
+	flex-shrink: 0;
+	max-height: 120px;
+	overflow-y: auto;
+	background: #1a1a1a;
+	border-top: 1px solid #333;
+}
+
+.error {
+	padding: 4px 12px;
+	color: #ff6b6b;
+	background: #2a1a1a;
+	border-bottom: 1px solid #333;
+}
+
+.warning {
+	padding: 4px 12px;
+	color: #f0ad4e;
+	background: #2a251a;
+	border-bottom: 1px solid #333;
+}
+
+.balance-section {
+	padding: 12px;
+	border-bottom: 1px solid #ddd;
+}
+
+.section-title {
+	font-weight: bold;
+	margin-bottom: 8px;
+	color: #333;
+	text-transform: uppercase;
+	font-size: 12px;
+	letter-spacing: 0.5px;
+}
+
+.balance-item {
+	margin-bottom: 8px;
+	padding: 8px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 2px;
+}
+
+.account-name,
+.category-name {
+	font-weight: bold;
+	color: #333;
+	margin-bottom: 4px;
+}
+
+.balance-amount {
+	color: #555;
+	font-size: 13px;
+}
