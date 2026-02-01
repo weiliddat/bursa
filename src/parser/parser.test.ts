@@ -950,6 +950,40 @@ describe("parse", () => {
 			expect(entries[0].amount).toMatchObject({ commodity: "RM", value: 50 });
 			expect(entries[1].amount).toMatchObject({ commodity: "MYR", value: 100 });
 		});
+
+		it("handles multiple aliases, commodities, and untracked accounts", () => {
+			const source = dedent`
+				>>> META
+				commodity: $ = USD
+				commodity: RM = MYR
+				commodity: A
+				untracked: @Brokerage
+
+				>>> BUDGET
+				2026-01
+				  &Groceries 500 $
+				  &Investing 1000 $
+
+				>>> LEDGER
+				@Checking
+				  2026-01-01 +5000 $ &Unassigned
+				  2026-01-15 +3000 $ &Unassigned
+				  2026-01-16 -100 $ &Groceries
+				  2026-01-20 -1000 $ @Brokerage &Investing
+
+				@Brokerage
+				  2026-01-01 +1000 $ &Unassigned
+				  2026-01-21 -1000 $ +10 AAPL
+			`;
+			const result = parse(source);
+
+			expect(result.errors).toContainEqual(
+				expect.objectContaining({
+					name: "UnknownEntityError",
+					message: "Unknown commodity: 'AAPL'",
+				}),
+			);
+		});
 	});
 
 	describe("duplicate symbol definitions", () => {

@@ -295,9 +295,18 @@ function parseAliasKey(p: Parser): string {
 	return p.source.slice(start, p.pos);
 }
 
+function isSymbolBoundary(ch: string): boolean {
+	if (ch === "" || ch === "." || (ch >= "0" && ch <= "9")) return true;
+	return !isIdentifierChar(ch);
+}
+
 function matchSymbol(p: Parser): string | null {
 	for (const symbol of p.data.meta.symbols) {
 		if (p.source.startsWith(symbol, p.pos)) {
+			const afterSymbol = p.source.charAt(p.pos + symbol.length);
+			if (!isSymbolBoundary(afterSymbol)) {
+				continue;
+			}
 			for (let i = 0; i < symbol.length; i++) {
 				advance(p);
 			}
@@ -310,6 +319,10 @@ function matchSymbol(p: Parser): string | null {
 function isSymbolStart(p: Parser): boolean {
 	for (const symbol of p.data.meta.symbols) {
 		if (p.source.startsWith(symbol, p.pos)) {
+			const afterSymbol = p.source.charAt(p.pos + symbol.length);
+			if (!isSymbolBoundary(afterSymbol)) {
+				continue;
+			}
 			return true;
 		}
 	}
