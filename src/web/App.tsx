@@ -2,6 +2,9 @@ import { createMemo, createSignal, For, Index } from "solid-js";
 import type { Ledger, Transaction } from "../parser/models";
 import { parse } from "../parser/parser";
 
+// Store refs to all line inputs for focus management
+const lineRefs: HTMLInputElement[] = [];
+
 const EXAMPLE_LEDGER = `>>> META
 commodity: $ = USD
 commodity: RM = MYR
@@ -95,8 +98,15 @@ function computeBalances(ledger: Ledger): ComputedState {
 					const current = categoryBalances.get(catKey) ?? 0;
 					categoryBalances.set(catKey, current - amount);
 				}
+			} else if (tx.target.kind === "swap") {
+				// Swap: also add the received commodity to the account
+				const swapAmount = tx.target.amount;
+				const swapValue =
+					swapAmount.sign === "-" ? -swapAmount.value : swapAmount.value;
+				const swapCommodity = swapAmount.commodity;
+				const currentSwapBalance = acctCommodities.get(swapCommodity) ?? 0;
+				acctCommodities.set(swapCommodity, currentSwapBalance + swapValue);
 			}
-			// Swap doesn't affect category balances
 		}
 		// Assertions don't affect balances
 	}
@@ -126,8 +136,6 @@ export function App() {
 
 	const computed = createMemo<ComputedState>(() => {
 		const result = parse(source());
-
-		console.log(result.data.meta);
 
 		if (result.errors.length > 0) {
 			return {
@@ -168,10 +176,63 @@ export function App() {
 	const handleKeyDown = (index: number, e: KeyboardEvent) => {
 		if (e.key === "Enter") {
 			e.preventDefault();
+			const input = lineRefs[index];
+			const cursorPos = input?.selectionStart ?? 0;
+			const textBeforeCursor = input?.value.slice(0, cursorPos) ?? "";
+			const insertAbove = textBeforeCursor.trim() === "";
+
 			const currentLines = lines();
 			const newLines = [...currentLines];
-			newLines.splice(index + 1, 0, "");
+			const insertIndex = insertAbove ? index : index + 1;
+			newLines.splice(insertIndex, 0, "");
 			setSource(newLines.join("\n"));
+
+			setTimeout(() => {
+				const focusIndex = insertAbove ? index : index + 1;
+				const target = lineRefs[focusIndex];
+				target?.focus();
+			}, 0);
+		} else if (e.key === "Backspace") {
+			const input = lineRefs[index];
+			if (input?.value === "" && lines().length > 1) {
+				e.preventDefault();
+				const currentLines = lines();
+				const newLines = [...currentLines];
+				newLines.splice(index, 1);
+				setSource(newLines.join("\n"));
+
+				// Focus previous line (or same index if at end)
+				setTimeout(() => {
+					const targetIndex = index > 0 ? index - 1 : 0;
+					const prevInput = lineRefs[targetIndex];
+					if (prevInput) {
+						prevInput.focus();
+						prevInput.selectionStart = prevInput.value.length;
+						prevInput.selectionEnd = prevInput.value.length;
+					}
+				}, 0);
+			}
+		} else if (e.key === "ArrowUp") {
+			e.preventDefault();
+			if (index > 0) {
+				const prevInput = lineRefs[index - 1];
+				if (prevInput) {
+					prevInput.focus();
+					prevInput.selectionStart = lineRefs[index]?.selectionStart ?? 0;
+					prevInput.selectionEnd = lineRefs[index]?.selectionEnd ?? 0;
+				}
+			}
+		} else if (e.key === "ArrowDown") {
+			e.preventDefault();
+			const currentLines = lines();
+			if (index < currentLines.length - 1) {
+				const nextInput = lineRefs[index + 1];
+				if (nextInput) {
+					nextInput.focus();
+					nextInput.selectionStart = lineRefs[index]?.selectionStart ?? 0;
+					nextInput.selectionEnd = lineRefs[index]?.selectionEnd ?? 0;
+				}
+			}
 		}
 	};
 
@@ -185,6 +246,9 @@ export function App() {
 							<div class="ledger-line">
 								<span class="line-number">{index + 1}</span>
 								<input
+									ref={(el) => {
+										lineRefs[index] = el;
+									}}
 									type="text"
 									value={line()}
 									onInput={(e) => updateLine(index, e.currentTarget.value)}
