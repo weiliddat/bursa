@@ -133,25 +133,16 @@ Convert YNAB CSV exports (`plan.csv`, `register.csv`) to `.bursa` format via dir
 - [x] Unicode and emoji support in entity names (accounts, categories, tags, commodities)
 - [x] Ensure YNAB converter also supports unicode/emojis when converting to .bursa format
 
-## Milestone 3: Web Interface & Computed Views
+## Milestone 3: Balance Engine & CLI
 
-Build a web UI that takes the raw `.bursa` ledger as input and displays computed views (balances, budgets, running totals) in real-time as you edit.
+Extract balance computation from the (removed) web UI into a standalone query module (`src/query/`). Provide a CLI for viewing balances from the terminal.
 
-### Phase 3.1: Foundation
+### Phase 3.1: Cleanup
 
-- [x] Set up basic web UI scaffold (SolidJS)
-- [x] Text editor pane for raw `.bursa` input (line-by-line inputs)
-- [x] Parse on change and surface errors/warnings inline
+- [x] Delete web app (`src/web/`, `index.html`, web-specific deps)
 
-### Phase 3.2: Balance Engine & Views
+### Phase 3.2: Balance Engine (`src/query/`)
 
-Single information-dense view of all account and category balances
-
-- [x] Compute account balances per commodity (current + point-in-time)
-- [x] Compute category balances (allocated − spent = available)
-- [x] Compute &Unassigned balance (income − allocations)
-
-Per-transaction balance tracking
-
-- [ ] Running balance (account and category balance after each transaction)
-- [ ] Incremental updates — avoid full recompute when possible
+- [ ] `computeBalances(ledger, asOfDate?)` — account balances per commodity, category balances, &Unassigned balance
+- [ ] Optional `asOfDate` parameter filters transactions to compute running totals (balance as of end of that day)
+- [ ] Tests for balance computation
