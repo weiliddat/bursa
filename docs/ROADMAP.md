@@ -1,6 +1,6 @@
 # Bursa Roadmap
 
-> Last Updated: 2026-02-01
+> Last Updated: 2026-02-06
 
 ## Milestone 1: Parser & Validation
 
@@ -143,6 +143,6 @@ Extract balance computation from the (removed) web UI into a standalone query mo
 
 ### Phase 3.2: Balance Engine (`src/query/`)
 
-- [ ] `computeBalances(ledger, asOfDate?)` — account balances per commodity, category balances, &Unassigned balance
-- [ ] Optional `asOfDate` parameter filters transactions to compute running totals (balance as of end of that day)
-- [ ] Tests for balance computation
+- [x] `computeBalances(ledger, asOfDate?)` — account balances per commodity, category balances, &Unassigned balance
+- [x] Optional `asOfDate` parameter filters transactions to compute running totals (balance as of end of that day)
+- [x] Tests for balance computation

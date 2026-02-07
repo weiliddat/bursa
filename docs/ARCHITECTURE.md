@@ -1,7 +1,7 @@
 # Bursa Architecture
 
-> Version: 0.8.2 (Draft)
-> Last Updated: 2026-01-23
+> Version: 0.9.0 (Draft)
+> Last Updated: 2026-02-06
 
 ## Overview
 
@@ -250,6 +250,8 @@ See SPEC.md §5 for the canonical list of diagnostics.
 
 ## 8. Public API
 
+### Parser
+
 ```typescript
 interface ParseResult {
 	data: Ledger;
@@ -267,6 +269,26 @@ interface Diagnostic {
 function parse(source: string): ParseResult;
 ```
 
+### Query
+
+```typescript
+type CommodityBalances = Map<string, number>;
+type EntityBalances = Map<string, CommodityBalances>;
+
+interface Balances {
+	accounts: EntityBalances;    // account → commodity → balance
+	categories: EntityBalances;  // category → commodity → available
+	unassigned: CommodityBalances; // commodity → unassigned balance
+}
+
+function computeBalances(ledger: Ledger, asOfDate?: string): Balances;
+```
+
+- `accounts`: Running balance per account per commodity, including implicit counter-entries for transfers.
+- `categories`: Budget allocations minus expenses. `&Unassigned` is tracked separately.
+- `unassigned`: Income to `&Unassigned` minus total budget allocations, per commodity.
+- `asOfDate`: When provided, only ledger entries `<= asOfDate` and budget periods `<= asOfDate.slice(0,7)` are included.
+
 ## 9. File Structure
 
 ```
@@ -276,6 +298,10 @@ src/parser/
 ├── diagnostics.ts  # Error/warning definitions
 ├── validate.ts     # Post-parse semantic checks
 └── index.ts        # Public API
+
+src/query/
+├── balances.ts     # computeBalances(ledger, asOfDate?)
+└── index.ts        # Public API
 ```
 
 ## 10. Testing
@@ -284,6 +310,9 @@ src/parser/
 src/parser/
 ├── parser.test.ts      # Valid/invalid parsing (syntax tests)
 └── validate.test.ts    # Semantic validation
+
+src/query/
+└── balances.test.ts    # Balance computation tests
 ```
 
 Use `examples/example.bursa` as canonical fixture.
@@ -301,3 +330,4 @@ Use `examples/example.bursa` as canonical fixture.
 | 0.8.0   | 2026-01-19 | Documented full Ledger.meta shape (symbols, accounts, categories) |
 | 0.8.1   | 2026-01-23 | Added untrackedAccounts to Ledger.meta                            |
 | 0.8.2   | 2026-01-23 | Documented symbol-driven amount dispatch                          |
+| 0.9.0   | 2026-02-06 | Added query module: `computeBalances(ledger, asOfDate?)`          |
