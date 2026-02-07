@@ -249,6 +249,94 @@ describe("computeBalances", () => {
 		expect(b.unassigned.get("USD")).toBe(4000);
 	});
 
+	it("computes refund to category", () => {
+		const b = bal(dedent`
+			>>> META
+			commodity: $ = USD
+
+			>>> BUDGET
+			2026-01
+			  &Groceries 500 $
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +5000 $ &Unassigned
+			  2026-01-16 -100 $ &Groceries
+			  2026-01-17 +50 $ &Groceries
+		`);
+		expect(b.categories.get("&Groceries")?.get("USD")).toBe(450);
+		expect(b.accounts.get("@Checking")?.get("USD")).toBe(4950);
+	});
+
+	it("computes reverse swap (sell)", () => {
+		const b = bal(dedent`
+			>>> META
+			commodity: $ = USD
+			commodity: AAPL
+
+			>>> LEDGER
+			@Brokerage
+			  2026-01-01 +10 AAPL &Unassigned
+			  2026-02-15 -5 AAPL +800 $
+		`);
+		expect(b.accounts.get("@Brokerage")?.get("AAPL")).toBe(5);
+		expect(b.accounts.get("@Brokerage")?.get("USD")).toBe(800);
+	});
+
+	it("computes overspending below zero", () => {
+		const b = bal(dedent`
+			>>> META
+			commodity: $ = USD
+
+			>>> BUDGET
+			2026-01
+			  &Dining 50 $
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +5000 $ &Unassigned
+			  2026-01-10 -30 $ &Dining
+			  2026-01-17 -30 $ &Dining
+		`);
+		expect(b.categories.get("&Dining")?.get("USD")).toBe(-10);
+		expect(b.accounts.get("@Checking")?.get("USD")).toBe(4940);
+	});
+
+	it("computes transfer to account with &Unassigned category", () => {
+		const b = bal(dedent`
+			>>> META
+			commodity: $ = USD
+			untracked: @Brokerage
+
+			>>> LEDGER
+			@Checking
+			  2026-01-01 +5000 $ &Unassigned
+			  2026-01-20 -1000 $ @Brokerage &Unassigned
+			@Brokerage
+			  2026-01-01 +0 $ &Unassigned
+		`);
+		expect(b.accounts.get("@Checking")?.get("USD")).toBe(4000);
+		expect(b.accounts.get("@Brokerage")?.get("USD")).toBe(1000);
+		expect(b.unassigned.get("USD")).toBe(4000);
+	});
+
+	it("computes swap with negative second amount", () => {
+		// e.g. margin call: pay fee + forfeit shares
+		const b = bal(dedent`
+			>>> META
+			commodity: $ = USD
+			commodity: AAPL
+
+			>>> LEDGER
+			@Brokerage
+			  2026-01-01 +1000 $ &Unassigned
+			  2026-01-01 +10 AAPL &Unassigned
+			  2026-01-21 -500 $ -2 AAPL
+		`);
+		expect(b.accounts.get("@Brokerage")?.get("USD")).toBe(500);
+		expect(b.accounts.get("@Brokerage")?.get("AAPL")).toBe(8);
+	});
+
 	it("ignores assertions", () => {
 		const b = bal(dedent`
 			>>> META
